@@ -66,6 +66,7 @@ footer{border-top:1px solid var(--line);padding:26px 5vw;color:var(--mute);font-
 @media(max-width:860px){.grid3,.grid4{grid-template-columns:1fr 1fr}main{grid-template-columns:1fr}.stats{gap:18px}}@media(max-width:520px){.grid3,.grid4{grid-template-columns:1fr}}
 a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:inherit}a.big{color:var(--onY)}a.tier{display:block;text-decoration:none}.hide{display:none!important}
 </style>
+<style>.lrow.top{background:linear-gradient(90deg,rgba(253,184,0,.16),transparent)!important}.lrow.top:first-child{background:linear-gradient(90deg,rgba(253,184,0,.28),transparent)!important}</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute"><symbol id="bee" viewBox="14 14 72 72"><circle cx="50" cy="50" r="31" fill="#FDB800"/><clipPath id="bc"><circle cx="50" cy="50" r="31"/></clipPath><g clip-path="url(#bc)"><rect x="0" y="49.5" width="100" height="10"/><rect x="0" y="64.4" width="100" height="40"/></g><circle cx="50" cy="50" r="31" fill="none" stroke="#000" stroke-width="4"/><path d="M28.5 28L22.8 21.3M71.5 28L77.1 22.5" stroke="#000" stroke-width="3.6" stroke-linecap="round"/></symbol></svg>
@@ -73,7 +74,8 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
  <a class="brand" href="../../" style="color:inherit;text-decoration:none"><svg><use href="#bee"/></svg>Beez</a>
  <div class="nav"><a href="../../play/">play</a><a href="../../dashboard/leaderboard/">leaderboard</a><a id="dashb" class="hide" href="../../dashboard/">dashboard</a><button id="acct">sign in</button><button id="mybee">mybee</button><button id="theme" aria-label="Toggle theme">theme</button></div>
 </header>
-<div class="dwrap"><h2 style="font-size:clamp(34px,5vw,56px);letter-spacing:-.02em;margin:0 0 6px">leaderboard</h2><p class="sub" style="margin:0 0 18px;text-align:left">the top bees in the hive.</p>
+<div class="dwrap"><h2 style="font-size:clamp(34px,5vw,56px);letter-spacing:-.02em;margin:0 0 6px">leaderboard</h2><p class="sub" id="lnote" style="margin:0 0 18px;text-align:left"></p>
+<div class="chips" id="lper" style="margin-bottom:10px"><button class="chip" data-p="week">weekly</button><button class="chip" data-p="month">monthly</button><button class="chip on" data-p="all">all time</button></div>
 <div class="chips" id="lmet"><button class="chip on" data-m="w">words spelled</button><button class="chip" data-m="g">games played</button><button class="chip" data-m="bw">best wpm</button><button class="chip" data-m="b">best score</button></div>
 <div class="list" id="llist" style="margin-top:16px"></div></div>
 <dialog id="adlg"><b style="font-size:20px">your hive account</b><p>sign in to save your stats, open your dashboard and play multiplayer.</p>
@@ -87,16 +89,27 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
 <button class="big" id="bsave" style="margin-top:6px">save mybee</button></dialog>
 <script>const ROOT="../../"</script>
 <script src="../../shared.js"></script>
+
 <script>
-let rows=[],met="w";
-function render(){const me=window.MYID;const a=rows.slice().sort((x,y)=>(y[met]||0)-(x[met]||0)).filter(r=>(r[met]||0)>0).slice(0,25);
- $("#llist").innerHTML=a.map((v,k)=>`<div><span style="display:flex;align-items:center;gap:10px">${k+1}. ${beeSvg(v.bee,24)}${esc(v.name||"bee")}${v.id===me?" (you)":""}${pillsFor(v.id)}</span><b class="mono">${(v[met]||0).toLocaleString()}</b></div>`).join("")||"<div><span>nobody here yet. be the first.</span></div>"}
+let rows={all:[],week:[],month:[]},met="w",per="all";
+const dur=ms=>{const d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),m=Math.floor(ms%36e5/6e4);return d?d+"d "+h+"h":h?h+"h "+m+"m":m+"m"};
+function note(){const n=new Date(),nm=Date.UTC(n.getUTCFullYear(),n.getUTCMonth()+1,1),day=(n.getUTCDay()+6)%7,nw=Date.UTC(n.getUTCFullYear(),n.getUTCMonth(),n.getUTCDate())+(7-day)*864e5;
+ $("#lnote").textContent=per==="week"?"weekly rankings reset every monday at 00:00 utc. resets in "+dur(nw-n.getTime())+".":per==="month"?"monthly rankings reset on the 1st at 00:00 utc. resets in "+dur(nm-n.getTime())+".":"every game since the beginning."}
+function render(){const me=window.MYID;note();
+ const a=(rows[per]||[]).slice().sort((x,y)=>(y[met]||0)-(x[met]||0)).filter(r=>(r[met]||0)>0).slice(0,25);
+ $("#llist").innerHTML=a.map((v,k)=>`<div class="lrow${k<3?" top":""}"><span style="display:flex;align-items:center;gap:10px">${medalHtml(k,34)} ${beeSvg(v.bee,26)}${esc(v.name||"bee")}${v.id===me?" (you)":""}${pillsFor(v.id)}</span><b class="mono">${(v[met]||0).toLocaleString()}</b></div>`).join("")||"<div><span>nobody here yet. be the first.</span></div>"}
 $$("#lmet .chip").forEach(b=>b.onclick=()=>{$$("#lmet .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");met=b.dataset.m;render()});
+$$("#lper .chip").forEach(b=>b.onclick=()=>{$$("#lper .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");per=b.dataset.p;render()});
 whenAuth.then(async({f,u})=>{
- if(!u){$("#llist").innerHTML='<div><span>sign in to see the leaderboard.</span><button class="chip" id="lsi">sign in</button></div>';$("#lsi").onclick=()=>$("#adlg").showModal();return}
+ if(!u){$("#llist").innerHTML='<div><span>sign in to see the leaderboard.</span><button class="chip" id="lsi">sign in</button></div>';$("#lsi").onclick=()=>$("#adlg").showModal();note();return}
  window.MYID=u.uid;await loadBadgeData(f);
- try{const db=await claude.use("db");db.collection("players").onSnapshot(s=>{rows=s.docs.map(d=>{const v=d.data()||{};return{id:d.id,name:v.name||"",w:+v.w||0,g:+v.g||0,bw:+v.bw||0,b:+v.b||0,bee:v.bee}});render()},()=>{$("#llist").innerHTML="<div><span>couldn’t load. check your database rules.</span></div>"})}catch(e){}
-});
+ const D=f.D,R=p=>D.ref(f.db,p),conv=s=>{const o=[];s.forEach(c=>{const v=c.val()||{};o.push({id:c.key,name:v.name||"",w:+v.w||0,g:+v.g||0,bw:+v.bw||0,b:+v.b||0,bee:v.bee})});return o},bad=()=>{$("#llist").innerHTML="<div><span>couldn’t load. check your database rules.</span></div>"};
+ const now=Date.now();
+ D.onValue(R("players"),s=>{rows.all=conv(s);render()},bad);
+ D.onValue(R("periods/week/"+weekKeyOf(now)),s=>{rows.week=conv(s);render()},()=>{});
+ D.onValue(R("periods/month/"+monthKeyOf(now)),s=>{rows.month=conv(s);render()},()=>{});
+ render()});
+note();setInterval(note,60000);
 </script>
 </body>
 </html>
