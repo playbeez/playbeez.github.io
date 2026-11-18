@@ -26,6 +26,7 @@ async function fbRoom(f,name){
 window.claude={async use(n){
  const f=await fb;if(!f||!f.auth.currentUser)return null;
  const{D,db,auth}=f,u=auth.currentUser;
+ if(n==="room"&&!u.emailVerified&&(u.providerData||[]).some(p=>p.providerId==="password"))return null;
  if(n==="user")return{id:async()=>u.uid};
  if(n==="db")return{collection:()=>({
   doc:id=>({set:d=>D.set(D.ref(db,"players/"+id),{...d,name:u.displayName||""})}),
@@ -105,7 +106,10 @@ const whenAuth=fb.then(async f=>{
   if(GOOGLE_CLIENT_ID){const tok=await gisToken();return f.Au.signInWithCredential(f.auth,f.Au.GoogleAuthProvider.credential(null,tok))}
   const g=new f.Au.GoogleAuthProvider();return f.Au.signInWithPopup(f.auth,g).catch(e=>["auth/popup-blocked","auth/operation-not-supported-in-this-environment"].includes(e.code)?f.Au.signInWithRedirect(f.auth,g):Promise.reject(e))});
  $("#ain").onclick=()=>run(()=>f.Au.signInWithEmailAndPassword(...cred()));
- $("#acr").onclick=()=>run(()=>f.Au.createUserWithEmailAndPassword(...cred()));
+ $("#acr").onclick=()=>run(async()=>{const c=await f.Au.createUserWithEmailAndPassword(...cred());try{await f.Au.sendEmailVerification(c.user,{url:new URL(ROOT+"dashboard/",location.href).href})}catch(e){}return c});
+ if(f&&!document.getElementById("afg")&&document.getElementById("acr")){const g=document.createElement("button");g.className="chip";g.id="afg";g.type="button";g.textContent="forgot password?";$("#acr").parentElement.appendChild(g);
+  g.onclick=async()=>{const em=$("#aem").value.trim();if(!em){err.style.color="var(--bad)";err.textContent="enter your email first.";return}try{await f.Au.sendPasswordResetEmail(f.auth,em);err.style.color="var(--ok)";err.textContent="if that email has an account, a reset link is on its way."}catch(e){err.style.color="var(--bad)";err.textContent=(e.code||"error").replace("auth/","").replace(/-/g," ")}}}
+ if(u&&!u.emailVerified&&(u.providerData||[]).some(p=>p.providerId==="password")){window.NEEDS_VERIFY=true;showVerify(f,u)}
  if(u){const ref=f.D.ref(f.db,"users/"+u.uid);let ready=false;
   window.pushUser=()=>{if(!ready||typeof stats==="undefined")return;f.D.set(ref,{s:{g:stats.g,w:stats.w,b:stats.b,c:stats.c,m:stats.m,a:stats.a,bw:stats.bw,bs:stats.bs},hist:stats.hist}).catch(()=>{})};
   try{const loc=JSON.parse(localStorage.getItem("beez")||"{}"),v=(await f.D.get(ref)).val();
@@ -212,3 +216,10 @@ document.head.appendChild(Object.assign(document.createElement("style"),{textCon
 "html.hasbg .card,html.hasbg .st,html.hasbg .sc,html.hasbg .tier,html.hasbg details,html.hasbg .prow{background:color-mix(in srgb,var(--card) 78%,transparent)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}"+
 "html.hasbg header{background:color-mix(in srgb,var(--bg2) 62%,transparent)}html.hasbg .list div{background:color-mix(in srgb,var(--bg) 58%,transparent)}html.hasbg dialog{background:color-mix(in srgb,var(--card) 94%,transparent)}"}));
 applyLook();
+
+function showVerify(f,u){if(document.getElementById("vbar"))return;const el=document.createElement("div");el.id="vbar";el.className="gmsg event";el.style.flexWrap="wrap";
+ const url=()=>({url:new URL(ROOT+"dashboard/",location.href).href}),t=document.createElement("span");t.textContent="verify your email to play multiplayer and join the leaderboard. we sent a link to "+u.email+".";
+ const a=document.createElement("button");a.textContent="resend email";const b=document.createElement("button");b.textContent="i verified it";
+ a.onclick=async()=>{try{await f.Au.sendEmailVerification(f.auth.currentUser,url());toast("verification email sent");a.disabled=true;let n=60;const iv=setInterval(()=>{n--;a.textContent="resend in "+n+"s";if(n<=0){clearInterval(iv);a.disabled=false;a.textContent="resend email"}},1000)}catch(e){toast(e.code==="auth/too-many-requests"?"slow down and try again soon":"couldn't send the email")}};
+ b.onclick=async()=>{try{await f.auth.currentUser.reload();if(f.auth.currentUser.emailVerified){await f.auth.currentUser.getIdToken(true);location.reload()}else toast("not verified yet. open the link in your email first")}catch(e){toast("couldn't check. try again")}};
+ el.append(t,a,b);const hd=document.querySelector("header");if(hd)hd.parentNode.insertBefore(el,hd.nextSibling)}
