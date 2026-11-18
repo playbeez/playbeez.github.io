@@ -94,7 +94,8 @@ const box=x=>{$("#adminroot").innerHTML=x};
 whenAuth.then(async({f,u})=>{
  if(!u){box('<div class="st"><b>sign in required</b><p>sign in with your admin account.</p><button class="big" id="si" style="margin-top:12px">sign in</button></div>');$("#si").onclick=()=>$("#adlg").showModal();return}
  const D=f.D,db=f.db,R=p=>D.ref(db,p);
- let ok=false;try{ok=(await D.get(R("admins/"+u.uid))).val()===true}catch(e){}
+ let ok=false,any=true;try{const s=await D.get(R("admins"));any=s.exists();ok=any&&!!s.val()[u.uid]}catch(e){}
+ if(!ok&&!any){box(`<div class="st"><b>no admin yet</b><p>nobody has been made an admin so far. the first account to claim it becomes the admin, so only do this on your own account.</p><button class="big" id="claim" style="margin-top:12px">make me the admin</button><p id="cerr" style="color:var(--bad);margin-top:10px"></p></div>`);$("#claim").onclick=async()=>{try{await D.set(R("admins/"+u.uid),true);location.reload()}catch(e){$("#cerr").textContent="couldn't claim it. make sure the new database rules are published."}};return}
  if(!ok){box(`<div class="st"><b>not an admin</b><p>this account isn't on the admin list. your account id is:</p><div class="mono" style="margin:10px 0;word-break:break-all;color:var(--y)">${u.uid}</div><button class="chip" id="cp">copy id</button><p style="margin-top:14px">to make this account an admin, open the firebase console, go to realtime database, then data. add a child named <b>admins</b>, and under it a child named with this id and the value <b>true</b>.</p></div>`);$("#cp").onclick=()=>navigator.clipboard.writeText(u.uid).then(()=>$("#cp").textContent="copied");return}
  box(`<div class="grid4" id="ost"></div>
  <h3 class="dh">global message</h3>
@@ -103,19 +104,31 @@ whenAuth.then(async({f,u})=>{
  <div class="row" style="margin-top:12px"><button class="big" id="gpost" style="margin:0">post message</button><button class="ghost" id="gclr">clear message</button></div>
  <p class="sub" id="gcur" style="font-size:14px;margin:12px 0 0;text-align:left"></p></div>
  <h3 class="dh">recent messages</h3><div class="list glog" id="glog"></div>
+ <h3 class="dh">verify a user</h3>
+ <div class="st"><p class="sub" style="font-size:14px;margin:0 0 10px;text-align:left">mark an account as verified without the email link. you can also tap verify on a player below.</p>
+ <div class="row"><input class="f" id="vemail" type="email" placeholder="user's email" style="flex:1;min-width:200px"><button class="big" id="vgo" style="margin:0">verify user</button></div>
+ <p class="sub" id="vmsg" style="font-size:14px;margin:12px 0 0;text-align:left"></p></div>
  <h3 class="dh">players</h3><input class="f" id="psearch" placeholder="search by name" style="margin-bottom:12px"><div id="plist"></div>`);
  let players={},badges={};
  const stats=()=>{const a=Object.values(players);const sum=k=>a.reduce((t,v)=>t+(+v[k]||0),0);$("#ost").innerHTML=[["players",a.length],["games played",sum("g")],["words spelled",sum("w")],["top wpm",Math.max(0,...a.map(v=>+v.bw||0))]].map(c=>`<div class="st"><span class="n mono">${c[0]}</span><div class="dv mono">${c[1].toLocaleString()}</div></div>`).join("")};
  const list=()=>{const q=$("#psearch").value.trim().toLowerCase();const rows=Object.entries(players).filter(([id,v])=>!q||(v.name||"").toLowerCase().includes(q)||id.toLowerCase().includes(q)).sort((a,b)=>(+b[1].w||0)-(+a[1].w||0)).slice(0,60);
   $("#plist").innerHTML=rows.map(([id,v])=>`<div class="prow"><div><div style="display:flex;align-items:center;gap:8px">${beeSvg(v.bee,28)}<b>${esc(v.name||"bee")}</b></div><div class="meta mono">${id}</div><div class="meta">${v.g||0} games · ${v.w||0} words · ${v.bw||0} wpm</div></div>
   <div class="bs">${Object.keys(BADGES).filter(k=>k!=="admin").map(k=>`<button class="chip${(badges[id]||{})[k]?" on":""}" data-u="${id}" data-b="${k}">${BADGES[k].l}</button>`).join("")}</div>
-  <button class="ghost" data-del="${id}" style="padding:8px 14px;color:var(--bad)">remove</button></div>`).join("")||'<p class="sub" style="text-align:left">no players found.</p>'};
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ghost" data-ver="${id}" style="padding:8px 14px">verify</button><button class="ghost" data-del="${id}" style="padding:8px 14px;color:var(--bad)">remove</button></div></div>`).join("")||'<p class="sub" style="text-align:left">no players found.</p>'};
  D.onValue(R("players"),s=>{players=s.val()||{};stats();list()},()=>{});
  D.onValue(R("badges"),s=>{badges=s.val()||{};list()},()=>{});
  $("#psearch").oninput=list;
- $("#plist").onclick=async e=>{const b=e.target.closest("[data-b]"),d=e.target.closest("[data-del]");
+ $("#plist").onclick=async e=>{const b=e.target.closest("[data-b]"),d=e.target.closest("[data-del]"),vv=e.target.closest("[data-ver]");
+  if(vv)return verifyUser({uid:vv.dataset.ver});
   if(b){const u2=b.dataset.u,k=b.dataset.b,on=!!(badges[u2]||{})[k];try{await D.set(R("badges/"+u2+"/"+k),on?null:true)}catch(x){alert("couldn't save. check your database rules.")}}
   if(d&&confirm("remove this player from the leaderboard? they can reappear next time they play."))try{await D.remove(R("players/"+d.dataset.del))}catch(x){alert("couldn't remove. check your database rules.")}};
+ const verifyUser=async who=>{const m=$("#vmsg");m.style.color="";m.textContent="verifying...";
+  try{if(typeof MAIL_URL==="undefined"||!MAIL_URL)throw new Error("no MAIL_URL set in shared.js");
+   const r=await fetch(MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({action:"adminVerify",idToken:await u.getIdToken(true),...who})});
+   const j=await r.json();if(!j.ok)throw new Error(j.error||"failed");
+   m.style.color="var(--ok)";m.textContent="verified "+(j.email||"user")+". they may need to refresh the page.";toast("user verified")}
+  catch(x){m.style.color="var(--bad)";m.textContent="couldn't verify: "+(x.message||"error")}};
+ $("#vgo").onclick=()=>{const em=$("#vemail").value.trim();if(!em){$("#vmsg").textContent="enter the user's email.";return}verifyUser({email:em})};
  D.onValue(R("announcements/current"),s=>{const v=s.val();$("#gcur").textContent=v&&v.text&&(!v.until||Date.now()<v.until)?"live now ("+v.type+"): "+v.text:"no message is live right now."},()=>{});
  D.onValue(D.query(R("announcements/log"),D.limitToLast(10)),s=>{const a=[];s.forEach(c=>{a.push(c.val())});$("#glog").innerHTML=a.reverse().map(v=>`<div><span>${esc(v.text||"")}</span><span class="mono" style="color:var(--mute);font-size:12px;white-space:nowrap">${v.type} · ${new Date(v.ts).toLocaleString()}</span></div>`).join("")||"<div><span>nothing posted yet.</span></div>"},()=>{});
  $("#gpost").onclick=async()=>{const text=$("#gtext").value.trim();if(!text)return;const dur=+$("#gdur").value,v={id:String(Date.now()),text,type:$("#gtype").value,by:u.uid,ts:Date.now(),until:dur?Date.now()+dur:0};
