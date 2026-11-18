@@ -220,7 +220,7 @@ function finish(ok,msg){if(G.done)return;G.done=true;clearInterval(tick);$("#in"
  else setTimeout(()=>G.i+1<G.words.length?round(G.i+1):endGame(),1500)}
 function renderLive(){const el=$("#live");if(!G||!G.multi){el.innerHTML="";return}
  el.innerHTML=Object.values(scores).sort((a,b)=>b.pts-a.pts).map(s=>`<div><span style="display:flex;align-items:center;gap:8px">${beeSvg(s.bee,22)}${esc(s.name)}</span><b class="mono">${s.pts}</b></div>`).join("")}
-function endGame(){clearInterval(tick);clearTimeout(hostT);stats.g++;stats.b=Math.max(stats.b,G.pts);const wpm=G.tms>0?Math.round(G.chars/5/(G.tms/60000)):0;G.wpm=wpm;stats.bw=Math.max(stats.bw,wpm);stats.hist.push({t:Date.now(),p:G.pts,ok:G.ok,n:G.words.length,d:P.diff,w:wpm,m:G.multi?1:0});stats.hist=stats.hist.slice(-60);stats.h.push({p:G.pts,ok:G.ok,n:G.words.length,d:P.diff});stats.h=stats.h.sort((a,b)=>b.p-a.p).slice(0,5);saveStats();$("#sh").textContent="copy result";view("end");
+function endGame(){clearInterval(tick);clearTimeout(hostT);stats.g++;stats.b=Math.max(stats.b,G.pts);const wpm=G.tms>0?Math.round(G.chars/5/(G.tms/60000)):0;G.wpm=wpm;stats.bw=Math.max(stats.bw,wpm);stats.hist.push({t:Date.now(),p:G.pts,ok:G.ok,n:G.words.length,d:P.diff,w:wpm,m:G.multi?1:0});stats.hist=stats.hist.slice(-300);stats.h.push({p:G.pts,ok:G.ok,n:G.words.length,d:P.diff});stats.h=stats.h.sort((a,b)=>b.p-a.p).slice(0,5);saveStats();$("#sh").textContent="copy result";view("end");
  const top=G.multi?Object.values(scores).sort((a,b)=>b.pts-a.pts)[0]:null;const acc=G.words.length?G.ok/G.words.length:0,rank=acc>=.95?"queen bee":acc>=.8?"worker bee":acc>=.5?"drone":"larva";
  $("#et").textContent=G.multi?(top?top.name+" wins":"round over"):rank;$("#esc").textContent="0";countTo($("#esc"),G.pts);
  $("#est").innerHTML=`<div><b class="mono">${Math.round(acc*100)}%</b><span>accuracy</span></div><div><b class="mono">${G.wpm||0}</b><span>wpm</span></div><div><b class="mono">${G.bs||0}</b><span>best streak</span></div>`;
@@ -243,7 +243,7 @@ function push(){try{pushPlayer()}catch(e){}try{window.pushUser&&pushUser()}catch
 function lobby(){$("#st").classList.toggle("hide",!isHost);$("#lw").textContent=isHost?"":"Waiting for the host to start…";
  $("#pl").innerHTML=peers.map(p=>`<div><span style="display:flex;align-items:center;gap:8px">${beeSvg(p.presence&&p.presence.bee,22)}${esc((p.presence&&p.presence.name)||"Bee")}${p.isMe?" (you)":""}</span><span>${p.presence&&p.presence.host?"host":""}</span></div>`).join("")}
 async function enter(code,host){$("#merr").textContent="";
- try{const room=await claude.use("room");if(!room||!room.join){$("#adlg").showModal();return}
+ try{const room=await claude.use("room");if(!room||!room.join){if(window.NEEDS_VERIFY)toast("verify your email first. check your inbox.");else $("#adlg").showModal();return}
   R=await room.join("beez-"+code);isHost=host;$("#rc").textContent=code;
   R.onPeers(c=>{peers=[...c.peers];if(!$("#lobby").classList.contains("hide"))lobby()});
   R.on("start",m=>{if(!m.isMe)begin(m.data.words,m.data.ms,true)});
