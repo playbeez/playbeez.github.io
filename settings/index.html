@@ -108,6 +108,7 @@ function render(){const th=document.documentElement.dataset.theme,{u}=ctx;
  const acct=u?`<div class="sc"><h3>account</h3>
  ${row("display name","shown on the leaderboard and in rooms.",`<div class="row"><input class="f" id="sname" maxlength="14" value="${esc(u.displayName||"")}"><button class="chip" id="snsave">save</button></div>`)}
  ${row("email",esc(u.email||"signed in with google"),'<button class="chip" id="sbee">edit mybee</button>')}
+ ${(u.providerData||[]).some(p=>p.providerId==="password")?row("email verification",u.emailVerified?"your email is verified.":"not verified yet. open the link we emailed you, then tap check.",u.emailVerified?'<span class="bdg" style="--c:#4ade80;margin:0"><i></i>verified</span>':'<div class="row"><button class="chip" id="sver">send email</button><button class="chip" id="schk">check</button></div>'):""}
  ${row("sign out","you can sign back in any time.",'<button class="ghost" id="sout" style="padding:8px 16px">sign out</button>')}</div>`
  :`<div class="sc"><h3>account</h3>${row("not signed in","sign in to save your stats, edit mybee and use your dashboard.",'<button class="big" id="ssi" style="margin:0;padding:10px 18px">sign in</button>')}</div>`;
  root.innerHTML=acct+`<div class="sc"><h3>gameplay</h3>
@@ -139,6 +140,8 @@ root.addEventListener("click",async e=>{const T=e.target.closest("button");if(!T
  const {f,u}=ctx;
  if(T.id==="ssi")$("#adlg").showModal();
  if(T.id==="sbee")$("#mybee").click();
+ if(T.id==="sver"){try{await f.Au.sendEmailVerification(u,{url:new URL(ROOT+"dashboard/",location.href).href});toast("verification email sent")}catch(x){toast(x.code==="auth/too-many-requests"?"slow down and try again soon":"couldn't send the email")}}
+ if(T.id==="schk"){try{await f.auth.currentUser.reload();if(f.auth.currentUser.emailVerified){await f.auth.currentUser.getIdToken(true);ctx.u=f.auth.currentUser;render();toast("email verified")}else toast("not verified yet")}catch(x){toast("couldn't check. try again")}}
  if(T.id==="sout")f.Au.signOut(f.auth).then(()=>location.href=ROOT);
  if(T.id==="stest"){try{speechSynthesis.cancel();const s=new SpeechSynthesisUtterance("welcome to the hive");s.rate=BS.rate;speechSynthesis.speak(s)}catch(x){}}
  if(T.id==="snsave"){const v=$("#sname").value.trim().slice(0,14);if(!v)return;try{await f.Au.updateProfile(u,{displayName:v});localStorage.setItem("beez_name",v);pushPlayer();toast("name saved")}catch(x){toast("couldn't save name")}}
