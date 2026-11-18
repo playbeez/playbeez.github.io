@@ -1,3 +1,6 @@
+const MAIL_URL="https://script.google.com/macros/s/AKfycbwAGbG1-CHdHRjmOe9WYYhey3kVcSH_FxOeTWEk3A0ATKDXH1kR1rktyozH16BXVqr5cw/exec";/* paste your apps script web app url here (ends in /exec) */
+async function sendVerify(f,u){if(MAIL_URL){const t=await u.getIdToken(true),r=await fetch(MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({idToken:t})});if(!r.ok)throw new Error("mail");return}return f.Au.sendEmailVerification(u,{url:new URL(ROOT+"dashboard/",location.href).href})}
+
 const FB_CONFIG={apiKey:"AIzaSyC3Xnc3Cc63B8v1nLPONlP5Up_FbGrdon4",authDomain:"beez-7c6a4.firebaseapp.com",databaseURL:"https://beez-7c6a4-default-rtdb.firebaseio.com",projectId:"beez-7c6a4",storageBucket:"beez-7c6a4.firebasestorage.app",messagingSenderId:"928305285561",appId:"1:928305285561:web:b9b46a0eebecdbd13f8e68",measurementId:"G-YZKBTPM6G0"};
 // paste your Web client ID here (Firebase console > Authentication > Sign-in method > Google > Web SDK configuration)
 const GOOGLE_CLIENT_ID="";
@@ -106,7 +109,7 @@ const whenAuth=fb.then(async f=>{
   if(GOOGLE_CLIENT_ID){const tok=await gisToken();return f.Au.signInWithCredential(f.auth,f.Au.GoogleAuthProvider.credential(null,tok))}
   const g=new f.Au.GoogleAuthProvider();return f.Au.signInWithPopup(f.auth,g).catch(e=>["auth/popup-blocked","auth/operation-not-supported-in-this-environment"].includes(e.code)?f.Au.signInWithRedirect(f.auth,g):Promise.reject(e))});
  $("#ain").onclick=()=>run(()=>f.Au.signInWithEmailAndPassword(...cred()));
- $("#acr").onclick=()=>run(async()=>{const c=await f.Au.createUserWithEmailAndPassword(...cred());try{await f.Au.sendEmailVerification(c.user,{url:new URL(ROOT+"dashboard/",location.href).href})}catch(e){}return c});
+ $("#acr").onclick=()=>run(async()=>{const c=await f.Au.createUserWithEmailAndPassword(...cred());try{await sendVerify(f,c.user)}catch(e){}return c});
  if(f&&!document.getElementById("afg")&&document.getElementById("acr")){const g=document.createElement("button");g.className="chip";g.id="afg";g.type="button";g.textContent="forgot password?";$("#acr").parentElement.appendChild(g);
   g.onclick=async()=>{const em=$("#aem").value.trim();if(!em){err.style.color="var(--bad)";err.textContent="enter your email first.";return}try{await f.Au.sendPasswordResetEmail(f.auth,em);err.style.color="var(--ok)";err.textContent="if that email has an account, a reset link is on its way."}catch(e){err.style.color="var(--bad)";err.textContent=(e.code||"error").replace("auth/","").replace(/-/g," ")}}}
  if(u&&!u.emailVerified&&(u.providerData||[]).some(p=>p.providerId==="password")){window.NEEDS_VERIFY=true;showVerify(f,u)}
@@ -220,6 +223,6 @@ applyLook();
 function showVerify(f,u){if(document.getElementById("vbar"))return;const el=document.createElement("div");el.id="vbar";el.className="gmsg event";el.style.flexWrap="wrap";
  const url=()=>({url:new URL(ROOT+"dashboard/",location.href).href}),t=document.createElement("span");t.textContent="verify your email to play multiplayer and join the leaderboard. we sent a link to "+u.email+".";
  const a=document.createElement("button");a.textContent="resend email";const b=document.createElement("button");b.textContent="i verified it";
- a.onclick=async()=>{try{await f.Au.sendEmailVerification(f.auth.currentUser,url());toast("verification email sent");a.disabled=true;let n=60;const iv=setInterval(()=>{n--;a.textContent="resend in "+n+"s";if(n<=0){clearInterval(iv);a.disabled=false;a.textContent="resend email"}},1000)}catch(e){toast(e.code==="auth/too-many-requests"?"slow down and try again soon":"couldn't send the email")}};
+ a.onclick=async()=>{try{await sendVerify(f,f.auth.currentUser);toast("verification email sent");a.disabled=true;let n=60;const iv=setInterval(()=>{n--;a.textContent="resend in "+n+"s";if(n<=0){clearInterval(iv);a.disabled=false;a.textContent="resend email"}},1000)}catch(e){toast(e.code==="auth/too-many-requests"?"slow down and try again soon":"couldn't send the email")}};
  b.onclick=async()=>{try{await f.auth.currentUser.reload();if(f.auth.currentUser.emailVerified){await f.auth.currentUser.getIdToken(true);location.reload()}else toast("not verified yet. open the link in your email first")}catch(e){toast("couldn't check. try again")}};
  el.append(t,a,b);const hd=document.querySelector("header");if(hd)hd.parentNode.insertBefore(el,hd.nextSibling)}
