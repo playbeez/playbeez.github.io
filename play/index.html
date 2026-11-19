@@ -89,6 +89,7 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
 .endscore{font-size:84px;font-weight:700;line-height:1;margin:6px 0 4px;color:var(--y);text-shadow:0 0 44px rgba(253,184,0,.55)}
 .endstats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}.endstats div{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px}.endstats b{display:block;font-size:26px}.endstats span{font-size:12px;color:var(--mute)}
 #et{color:var(--ink)}
+#play.hc{box-shadow:inset 0 0 0 2px var(--bad);border-radius:18px}#play.hc::before{content:"hardcore. one miss and your bee is gone.";display:block;color:var(--bad);font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;text-align:center;margin:8px 0}#hdlg{background:var(--bg2);color:var(--ink);border:2px solid var(--bad);border-radius:20px;padding:22px;max-width:420px;text-align:center;text-transform:lowercase}#hdlg::backdrop{background:rgba(0,0,0,.7)}#hdlg .row2{display:flex;gap:10px;justify-content:center;margin-top:14px}
 </style>
 </head>
 <body>
@@ -106,6 +107,7 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
     <div id="solo">
      <button class="opt on" data-m="practice"><span><b>Practice</b><small>No timer. Just vibes.</small></span><i></i></button>
      <button class="opt" data-m="timed"><span><b>Timed</b><small>20 seconds a word.</small></span><i></i></button>
+     <button class="opt" data-m="hardcore"><span><b>Hardcore</b><small>one miss and you lose. your mybee is on the line.</small></span><i></i></button>
     </div>
     <div id="multi" class="hide">
      <div class="lbl" style="margin-top:0">YOUR NAME</div><input class="f" id="nm" maxlength="14">
@@ -143,6 +145,7 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
  </section>
 </div>
 <section class="sec" style="padding-top:2vh" id="board"><h2>your best games</h2><div class="list" id="lb"></div></section>
+<dialog id="hdlg"><b style="font-size:22px;color:var(--bad)">hardcore mode</b><p style="margin:10px 0 0">spell every word right, with 20 seconds each. one miss, or one timeout, and you lose.</p><p style="margin:10px 0 0"><b>your mybee is on the line.</b> if you lose, it resets to the default bee and your custom look is gone for good.</p><div class="row2"><button class="chip" id="hno">back out</button><button class="btn" id="hyes" style="background:var(--bad);color:#fff;border:2.5px solid #000;border-radius:12px;padding:10px 18px;font-weight:800">i'm ready</button></div></dialog>
 <dialog id="adlg"><b style="font-size:20px">your hive account</b><p>sign in to save your stats, open your dashboard and play multiplayer.</p>
 <button class="big" id="agg" style="margin:0 0 12px">continue with google</button>
 <input class="f" id="aem" type="email" placeholder="email" autocomplete="email" style="margin-bottom:8px"><input class="f" id="apw" type="password" placeholder="password" autocomplete="current-password">
@@ -171,7 +174,7 @@ W.impossible.push(..."reservation performing absolutely calculator significantly
 W.mixed=[].concat(W.easy,W.medium,W.hard,W.impossible);
 const P={name:"Bee"+(100+Math.floor(Math.random()*900)),diff:"easy",mode:"practice",tab:"solo",n:8};
 let G=null,R=null,isHost=false,peers=[],scores={},answered={},adv={},hostT=null,tick=null,stats={g:0,b:0,w:0,h:[],c:0,m:0,a:0,bw:0,hist:[],bs:0},tot={g:0,w:0},dbOn=false,mine=null,lbd=[];
-try{const s=JSON.parse(localStorage.getItem("beez")||"{}");stats.g=s.g||0;stats.b=s.b||0;stats.w=s.w||0;stats.h=s.h||[];stats.c=s.c||0;stats.m=s.m||0;stats.a=s.a||0;stats.bw=s.bw||0;stats.bs=s.bs||0;stats.hist=s.hist||[]}catch(e){}
+try{const s=JSON.parse(localStorage.getItem("beez")||"{}");stats.g=s.g||0;stats.b=s.b||0;stats.w=s.w||0;stats.h=s.h||[];stats.c=s.c||0;stats.m=s.m||0;stats.a=s.a||0;stats.bw=s.bw||0;stats.bs=s.bs||0;stats.hcb=s.hcb||0;stats.hcw=s.hcw||0;stats.hist=s.hist||[]}catch(e){}
 const saveStats=()=>{try{localStorage.setItem("beez",JSON.stringify(stats))}catch(e){}showStats();renderLb();push();window.renderDash&&renderDash()};saveStats();
 $("#nm").value=P.name;$("#nm").oninput=e=>P.name=e.target.value.trim()||"Bee";
 const view=id=>["home","lobby","play","end"].forEach(v=>$("#"+v).classList.toggle("hide",v!==id));
@@ -182,12 +185,14 @@ const toCard=()=>$("#card").scrollIntoView({behavior:"smooth",block:"center"});
 $$(".tier").forEach(b=>b.onclick=()=>{view("home");tab("solo");$(".chip[data-d="+b.dataset.d+"]").click();toCard()});
 const tab=t=>{P.tab=t;$("#tS").classList.toggle("on",t==="solo");$("#tM").classList.toggle("on",t==="multi");$("#solo").classList.toggle("hide",t!=="solo");$("#multi").classList.toggle("hide",t!=="multi");$("#go").classList.toggle("hide",t==="multi")};
 $("#tS").onclick=()=>tab("solo");$("#tM").onclick=()=>tab("multi");
-$$(".opt").forEach(b=>b.onclick=()=>{$$(".opt").forEach(x=>x.classList.remove("on"));b.classList.add("on");P.mode=b.dataset.m;$("#go").textContent=P.mode==="timed"?"Start timed game":"Start practice"});
+$$(".opt").forEach(b=>b.onclick=()=>{$$(".opt").forEach(x=>x.classList.remove("on"));b.classList.add("on");P.mode=b.dataset.m;$("#go").textContent=P.mode==="hardcore"?"Start hardcore":P.mode==="timed"?"Start timed game":"Start practice"});
 $$(".chip[data-d]").forEach(b=>b.onclick=()=>{$$(".chip[data-d]").forEach(x=>x.classList.remove("on"));b.classList.add("on");P.diff=b.dataset.d});
 const pick=(d,n)=>{const a=[...new Set(W[d])].sort(()=>Math.random()-.5);return a.slice(0,n)};
 const speak=w=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.rate=(typeof BS!=="undefined"&&BS.rate)||.85;u.onstart=()=>$("#hear").classList.add("talk");u.onend=()=>$("#hear").classList.remove("talk");speechSynthesis.speak(u)}catch(e){}};
 $("#hear").onclick=()=>{G&&speak(G.word);$("#in").focus()};
-$("#go").onclick=()=>begin(pick(P.diff,P.n),P.mode==="timed"?20000:0,false);
+$("#go").onclick=()=>{if(P.mode==="hardcore"){$("#hdlg").showModal();return}begin(pick(P.diff,P.n),P.mode==="timed"?20000:0,false)};
+$("#hno").onclick=()=>$("#hdlg").close();$("#hyes").onclick=()=>{$("#hdlg").close();begin(pick(P.diff,P.n),20000,false,true)};
+function loseBee(){MY=normBee(null);try{localStorage.setItem("beez_my",JSON.stringify(MY))}catch(e){}try{window.saveBeeRemote&&saveBeeRemote()}catch(e){}try{drawMy()}catch(e){}}
 $("#quick").onclick=()=>begin(pick("mixed",8),20000,false);
 
 function showCd(x){const c=$("#cdnum");c.textContent=x;c.classList.remove("on");void c.offsetWidth;c.classList.add("on")}
@@ -197,7 +202,7 @@ function hx(x,y,dx,dy,cls){const p=document.createElement("i");p.className="hx "
 function burst(ok){if(!ok)return;const r=$("#wd").getBoundingClientRect();for(let i=0;i<14;i++)hx(r.left+r.width/2,r.top+r.height/2,(Math.random()*2-1)*190,-Math.random()*170-30)}
 function confetti(){for(let i=0;i<46;i++)hx(Math.random()*innerWidth,-20,(Math.random()*2-1)*120,innerHeight*(.6+Math.random()*.4),"fall")}
 function stk(n){const e=$("#stk");e.textContent=n>1?"streak x"+n:"";e.classList.remove("on");void e.offsetWidth;if(n>1)e.classList.add("on")}
-function begin(words,ms,multi){G={words,ms,multi,i:0,pts:0,ok:0,streak:0,chars:0,tms:0,word:"",done:true};scores={};answered={};adv={};renderLive();view("play");$("#pn").textContent=words.length;cd(()=>G&&round(0))}
+function begin(words,ms,multi,hc){G={hc:!!hc,words,ms,multi,i:0,pts:0,ok:0,streak:0,chars:0,tms:0,word:"",done:true};scores={};answered={};adv={};renderLive();$("#play").classList.toggle("hc",!!hc);view("play");$("#pn").textContent=words.length;cd(()=>G&&round(0))}
 function cd(then){let n=3;const fb=$("#fb");$("#in").disabled=true;$("#wd").querySelectorAll(".wl").forEach(e=>e.remove());$("#pb").style.width="100%";$("#pt").textContent="";fb.style.color="var(--y)";fb.textContent="get ready";const t=setInterval(()=>{if(!G){clearInterval(t);return}if(n>0){fb.textContent="get ready";showCd(n--)}else{clearInterval(t);showCd("go");then()}},800)}
 function round(i){clearInterval(tick);const g=G;$("#play").classList.remove("low");g.i=i;g.word=g.words[i];g.done=false;g.t0=Date.now();
  $("#pi").textContent=i+1;$("#ps").textContent=g.pts;$("#fb").textContent="";$("#in").value="";$("#in").disabled=false;
@@ -217,7 +222,7 @@ function finish(ok,msg){if(G.done)return;G.done=true;clearInterval(tick);$("#in"
  $("#fb").style.color=ok?"var(--ok)":"var(--bad)";$("#fb").textContent=ok?"sweet! +"+pts+(G.streak>1?" · "+G.streak+" in a row":""):(msg||"Not quite")+". it was “"+G.word+"”";
  scores.me={name:P.name,pts:G.pts,bee:MY};renderLive();
  if(G.multi){R&&R.emit("ans",{i:G.i,name:P.name,pts:G.pts,bee:MY});markAns(G.i,"me")}
- else setTimeout(()=>G.i+1<G.words.length?round(G.i+1):endGame(),1500)}
+ else setTimeout(()=>G.i+1<G.words.length&&!(G.hc&&!ok)?round(G.i+1):endGame(),1500)}
 function renderLive(){const el=$("#live");if(!G||!G.multi){el.innerHTML="";return}
  el.innerHTML=Object.values(scores).sort((a,b)=>b.pts-a.pts).map(s=>`<div><span style="display:flex;align-items:center;gap:8px">${beeSvg(s.bee,22)}${esc(s.name)}</span><b class="mono">${s.pts}</b></div>`).join("")}
 function endGame(){clearInterval(tick);clearTimeout(hostT);stats.g++;stats.b=Math.max(stats.b,G.pts);const wpm=G.tms>0?Math.round(G.chars/5/(G.tms/60000)):0;G.wpm=wpm;stats.bw=Math.max(stats.bw,wpm);stats.hist.push({t:Date.now(),p:G.pts,ok:G.ok,n:G.words.length,d:P.diff,w:wpm,m:G.multi?1:0});stats.hist=stats.hist.slice(-300);stats.h.push({p:G.pts,ok:G.ok,n:G.words.length,d:P.diff});stats.h=stats.h.sort((a,b)=>b.p-a.p).slice(0,5);saveStats();$("#sh").textContent="copy result";view("end");
@@ -225,9 +230,10 @@ function endGame(){clearInterval(tick);clearTimeout(hostT);stats.g++;stats.b=Mat
  $("#et").textContent=G.multi?(top?top.name+" wins":"round over"):rank;$("#esc").textContent="0";countTo($("#esc"),G.pts);
  $("#est").innerHTML=`<div><b class="mono">${Math.round(acc*100)}%</b><span>accuracy</span></div><div><b class="mono">${G.wpm||0}</b><span>wpm</span></div><div><b class="mono">${G.bs||0}</b><span>best streak</span></div>`;
  $("#rep").classList.toggle("hide",!!G.multi);if(acc>=.5)confetti();
+ if(G.hc){const win=G.ok===G.words.length;stats.hcb=Math.max(stats.hcb||0,G.ok);if(win)stats.hcw=(stats.hcw||0)+1;else loseBee();saveStats();$("#et").textContent=win?"hardcore cleared":"your mybee is gone";$("#es").textContent=win?"flawless. "+G.ok+" of "+G.words.length+" and your bee lives.":"you made it "+G.ok+" word"+(G.ok===1?"":"s")+" deep. your mybee was reset to the default bee.";if(!win)$("#esc").textContent="0"}
  $("#es").textContent=G.ok+" of "+G.words.length+" correct · "+G.pts+" points"+(G.wpm?" · "+G.wpm+" wpm":"");
  $("#er").innerHTML=G.multi?Object.values(scores).sort((a,b)=>b.pts-a.pts).map((s,k)=>`<div><span>${k+1+"."} ${beeSvg(s.bee,22)} ${esc(s.name)}</span><b class="mono">${s.pts}</b></div>`).join(""):""}
-$("#rep").onclick=()=>begin(pick(P.diff,P.n),G.ms,false);
+$("#rep").onclick=()=>{if(G.hc){view("home");return}begin(pick(P.diff,P.n),G.ms,false)};
 $("#again").onclick=()=>{R?(view("lobby"),lobby()):view("home")};
 function renderLb(){$("#lb").innerHTML=stats.h.length?stats.h.map((h,k)=>`<div><span>${k+1}. ${h.d} · ${h.ok}/${h.n} correct</span><b class="mono">${h.p}</b></div>`).join(""):"<div><span>no games yet. your first score lands here.</span></div>"}
 let mute=false,AC=null;
@@ -269,6 +275,7 @@ function advance(i){if(!isHost||adv[i])return;adv[i]=1;clearTimeout(hostT);
 const Q=new URLSearchParams(location.search);
 if(Q.get("d")&&document.querySelector(".chip[data-d='"+Q.get("d")+"']"))$(".chip[data-d='"+Q.get("d")+"']").click();
 if(location.hash==="#multi")tab("multi");
+if(Q.get("hardcore")){setTimeout(()=>{$(".opt[data-m=hardcore]").click();toCard()},150)}
 if(Q.get("quick"))setTimeout(()=>$("#quick").click(),150);
 whenAuth.then(({u})=>{try{const s=JSON.parse(localStorage.getItem("beez")||"{}");["g","b","w","c","m","a","bw","bs"].forEach(k=>stats[k]=s[k]||0);stats.hist=s.hist||[];stats.h=s.h||[]}catch(e){}
  if(u){let o=null;try{o=localStorage.getItem("beez_name")}catch(x){}P.name=o||(u.displayName||(u.email||"bee").split("@")[0]).slice(0,14);$("#nm").value=P.name}
