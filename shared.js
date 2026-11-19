@@ -92,7 +92,7 @@ $("#bcan").onclick=()=>{MY=loadMy();$("#bdlg").close()};
 $("#mybee").onclick=()=>{MY=loadMy();drawMy();$("#bdlg").showModal()};
 function toast(t){const d=document.createElement("div");d.textContent=t;d.style.cssText="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--y);color:var(--onY);font-weight:800;padding:10px 18px;border-radius:12px;z-index:99;animation:toast 1.8s both";document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
 $("#bsave").onclick=()=>{try{localStorage.setItem("beez_my",JSON.stringify(MY))}catch(e){}window.push&&push();window.saveBeeRemote&&saveBeeRemote();$("#bdlg").close();window.renderDash&&renderDash();toast("mybee saved")};
-async function pushPlayer(){try{const db=await claude.use("db"),user=await claude.use("user");if(!db||!user)return;const s=typeof stats!=="undefined"?stats:JSON.parse(localStorage.getItem("beez")||"{}");await db.collection("players").doc(await user.id()).set({g:s.g||0,w:s.w||0,b:s.b||0,bw:s.bw||0,hc:s.hcb||0,hw:s.hcw||0,bee:MY});await pushPeriods(s)}catch(e){}}
+async function pushPlayer(){try{const db=await claude.use("db"),user=await claude.use("user");if(!db||!user)return;try{const o=localStorage.getItem("beez_uid");if(o!==null&&o!==await user.id())return}catch(e){}const s=typeof stats!=="undefined"?stats:JSON.parse(localStorage.getItem("beez")||"{}");await db.collection("players").doc(await user.id()).set({g:s.g||0,w:s.w||0,b:s.b||0,bw:s.bw||0,hc:s.hcb||0,hw:s.hcw||0,bee:MY});await pushPeriods(s)}catch(e){}}
 function push(){return pushPlayer()}
 $("#theme").onclick=()=>{const h=document.documentElement;h.dataset.theme=h.dataset.theme==="dark"?"light":"dark"};
 $("#mybee").classList.add("hide");
@@ -100,9 +100,10 @@ function gisToken(){return new Promise((res,rej)=>{try{const c=google.accounts.o
 if(GOOGLE_CLIENT_ID){const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;document.head.appendChild(s)}
 const whenAuth=fb.then(async f=>{
  const u=f&&f.auth.currentUser,btn=$("#acct"),err=$("#aerr");
+ if(u){let own=null;try{own=localStorage.getItem("beez_uid")}catch(e){}if(own!==u.uid){try{if(own!==null){localStorage.removeItem("beez");localStorage.removeItem("beez_my")}localStorage.setItem("beez_uid",u.uid)}catch(e){}if(own!==null){location.reload();return new Promise(()=>{})}}}
  if(u){btn.textContent="sign out";$("#dashb").classList.remove("hide");$("#mybee").classList.remove("hide")}
  if(u)f.D.get(f.D.ref(f.db,"admins/"+u.uid)).then(s=>{window.IS_ADMIN=s.exists();const n=document.querySelector(".nav");if(window.IS_ADMIN&&n&&!document.getElementById("adminl")){const x=document.createElement("a");x.id="adminl";x.href=ROOT+"admin/";x.textContent="admin";n.insertBefore(x,n.firstChild)}}).catch(()=>{});
- btn.onclick=()=>{if(u)f.Au.signOut(f.auth).then(()=>location.href=ROOT||"./");else $("#adlg").showModal()};
+ btn.onclick=()=>{if(u){try{["beez","beez_my","beez_uid"].forEach(k=>localStorage.removeItem(k))}catch(e){}}if(u)f.Au.signOut(f.auth).then(()=>location.href=ROOT||"./");else $("#adlg").showModal()};
  const run=p=>{if(!f){err.textContent="firebase isn’t set up yet. paste your config at the top of shared.js.";return}err.textContent="";try{sessionStorage.setItem("beez_dash","1")}catch(x){}p().then(()=>{try{sessionStorage.removeItem("beez_dash")}catch(x){}location.href=ROOT+"dashboard/"}).catch(e=>{try{sessionStorage.removeItem("beez_dash")}catch(x){}err.textContent=e.code==="auth/unauthorized-domain"?"unauthorized domain. add this exact host in firebase authorized domains: "+location.hostname:(e.code||"error").replace("auth/","").replace(/-/g," ")})};
  const cred=()=>[f.auth,$("#aem").value.trim(),$("#apw").value];
  $("#agg").onclick=()=>run(async()=>{
