@@ -143,10 +143,13 @@ document.head.appendChild(Object.assign(document.createElement("style"),{textCon
  for(let i=1;i<=14;i++)css+="dialog[open]>:nth-child("+i+"){animation-delay:"+(i*35)+"ms}";
  css+="@media(prefers-reduced-motion:reduce){dialog[open],dialog[open]>*,dialog.closing{animation:none!important}}";
  document.head.appendChild(Object.assign(document.createElement("style"),{textContent:css}))})();
-const BADGES={admin:{l:"admin",c:"#f87171"},founder:{l:"founder",c:"#FDB800"},early:{l:"early bee",c:"#4ade80"},tester:{l:"tester",c:"#60a5fa"},champion:{l:"champion",c:"#c084fc"},vip:{l:"vip",c:"#f472b6"},helper:{l:"helper",c:"#2dd4bf"}};
+const BADGES={admin:{l:"admin",c:"#f87171"},verified:{l:"verified",c:"#FDB800"},founder:{l:"founder",c:"#FDB800"},early:{l:"early bee",c:"#4ade80"},tester:{l:"tester",c:"#60a5fa"},champion:{l:"champion",c:"#c084fc"},vip:{l:"vip",c:"#f472b6"},helper:{l:"helper",c:"#2dd4bf"}};
 let BADGEDATA={},ADMINIDS={};
 const badgePill=id=>BADGES[id]?`<span class="bdg" style="--c:${BADGES[id].c}"><i></i>${BADGES[id].l}</span>`:"";
-const pillsFor=uid=>(ADMINIDS[uid]?badgePill("admin"):"")+Object.keys(BADGEDATA[uid]||{}).filter(k=>BADGEDATA[uid][k]).map(badgePill).join("");
+let PG={};
+const isVer=uid=>!!(ADMINIDS[uid]||(BADGEDATA[uid]||{}).verified||(PG[uid]||0)>=100);
+const verMark=(uid,sz)=>isVer(uid)?`<svg class="vmk" width="${sz||16}" height="${sz||16}" viewBox="0 0 24 24" role="img" aria-label="verified"><title>verified</title><path d="M12 1.5l2.6 2 3.3-.1 1 3.1 2.7 1.9-1 3.1 1 3.1-2.7 1.9-1 3.1-3.3-.1-2.6 2-2.6-2-3.3.1-1-3.1-2.7-1.9 1-3.1-1-3.1 2.7-1.9 1-3.1 3.3.1z" fill="#FDB800" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.8 12.4l3 3 5.4-6" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`:"";
+const pillsFor=uid=>verMark(uid)+(ADMINIDS[uid]?badgePill("admin"):"")+Object.keys(BADGEDATA[uid]||{}).filter(k=>k!=="verified"&&BADGEDATA[uid][k]).map(badgePill).join("");
 async function loadBadgeData(f){try{BADGEDATA=(await f.D.get(f.D.ref(f.db,"badges"))).val()||{}}catch(e){}try{ADMINIDS=(await f.D.get(f.D.ref(f.db,"admins"))).val()||{}}catch(e){}}
 function showGlobal(v){const old=document.getElementById("gmsg");if(old)old.remove();
  let dm="";try{dm=localStorage.getItem("beez_dm")}catch(e){}
@@ -160,7 +163,7 @@ document.head.appendChild(Object.assign(document.createElement("style"),{textCon
 ".gmsg{display:flex;align-items:center;justify-content:center;gap:14px;padding:10px 16px;font-weight:700;font-size:14px;text-align:center;animation:gin .4s both;position:relative;z-index:6}"+
 ".gmsg.info{background:var(--y);color:var(--onY)}.gmsg.warn{background:#f87171;color:#1a0505}.gmsg.event{background:#c084fc;color:#14051f}.gmsg button{background:rgba(0,0,0,.18);border:0;border-radius:8px;padding:3px 10px;font-weight:800;color:inherit}"+
 "@keyframes gin{from{transform:translateY(-100%);opacity:0}}"+
-".bdg{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;margin-left:8px;border-radius:99px;border:1px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);vertical-align:middle}"+
+".vmk{margin-left:6px;vertical-align:middle}.ulink{color:inherit;text-decoration:none}.ulink:hover{text-decoration:underline}.bdg{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:2px 8px;margin-left:8px;border-radius:99px;border:1px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);vertical-align:middle}"+
 ".bdg i{width:8px;height:9px;background:var(--c);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}"}));
 var BS=Object.assign({diff:"easy",n:8,mode:"practice",mute:false,rate:.85,rm:false,accent:"#FDB800",tone:"warm",bgOn:false,blur:0,dim:40,sat:100,tint:0},(()=>{try{return JSON.parse(localStorage.getItem("beez_set")||"{}")}catch(e){return{}}})());
 function saveBS(){try{localStorage.setItem("beez_set",JSON.stringify(BS))}catch(e){}}
