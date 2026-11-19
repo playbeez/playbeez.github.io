@@ -76,7 +76,7 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
 </header>
 <div class="dwrap"><h2 style="font-size:clamp(34px,5vw,56px);letter-spacing:-.02em;margin:0 0 6px">leaderboard</h2><p class="sub" id="lnote" style="margin:0 0 18px;text-align:left"></p>
 <div class="chips" id="lper" style="margin-bottom:10px"><button class="chip" data-p="week">weekly</button><button class="chip" data-p="month">monthly</button><button class="chip on" data-p="all">all time</button></div>
-<div class="chips" id="lmet"><button class="chip on" data-m="w">words spelled</button><button class="chip" data-m="g">games played</button><button class="chip" data-m="bw">best wpm</button><button class="chip" data-m="b">best score</button></div>
+<div class="chips" id="lmet"><button class="chip on" data-m="w">words spelled</button><button class="chip" data-m="g">games played</button><button class="chip" data-m="bw">best wpm</button><button class="chip" data-m="b">best score</button><button class="chip" data-m="hc">hardcore run</button></div>
 <div class="list" id="llist" style="margin-top:16px"></div></div>
 <dialog id="adlg"><b style="font-size:20px">your hive account</b><p>sign in to save your stats, open your dashboard and play multiplayer.</p>
 <button class="big" id="agg" style="margin:0 0 12px">continue with google</button>
@@ -103,7 +103,7 @@ $$("#lper .chip").forEach(b=>b.onclick=()=>{$$("#lper .chip").forEach(x=>x.class
 whenAuth.then(async({f,u})=>{
  if(!u){$("#llist").innerHTML='<div><span>sign in to see the leaderboard.</span><button class="chip" id="lsi">sign in</button></div>';$("#lsi").onclick=()=>$("#adlg").showModal();note();return}
  window.MYID=u.uid;await loadBadgeData(f);
- const D=f.D,R=p=>D.ref(f.db,p),conv=s=>{const o=[];s.forEach(c=>{const v=c.val()||{};PG[c.key]=+v.g||PG[c.key]||0;o.push({id:c.key,name:v.name||"",w:+v.w||0,g:+v.g||0,bw:+v.bw||0,b:+v.b||0,bee:v.bee})});return o},bad=()=>{$("#llist").innerHTML="<div><span>couldn’t load. check your database rules.</span></div>"};
+ const D=f.D,R=p=>D.ref(f.db,p),conv=s=>{const o=[];s.forEach(c=>{const v=c.val()||{};o.push({id:c.key,name:v.name||"",w:+v.w||0,g:+v.g||0,bw:+v.bw||0,b:+v.b||0,hc:+v.hc||0,bee:v.bee})});return o},bad=()=>{$("#llist").innerHTML="<div><span>couldn’t load. check your database rules.</span></div>"};
  const now=Date.now();
  D.onValue(R("players"),s=>{rows.all=conv(s);render()},bad);
  D.onValue(R("periods/week/"+weekKeyOf(now)),s=>{rows.week=conv(s);render()},()=>{});
