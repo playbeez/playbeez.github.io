@@ -103,10 +103,10 @@ function gisToken(){return new Promise((res,rej)=>{try{const c=google.accounts.o
 if(GOOGLE_CLIENT_ID){const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;document.head.appendChild(s)}
 const whenAuth=fb.then(async f=>{
  const u=f&&f.auth.currentUser,btn=$("#acct"),err=$("#aerr");
- if(u){let own=null;try{own=localStorage.getItem("beez_uid")}catch(e){}if(own!==u.uid){try{if(own!==null){localStorage.removeItem("beez");localStorage.removeItem("beez_my")}localStorage.setItem("beez_uid",u.uid)}catch(e){}if(own!==null){location.reload();return new Promise(()=>{})}}}
+ if(u){let own=null;try{own=localStorage.getItem("beez_uid")}catch(e){}if(own!==u.uid){try{if(own!==null){["beez","beez_my","beez_set","beez_bg","beez_name"].forEach(k=>localStorage.removeItem(k))}localStorage.setItem("beez_uid",u.uid)}catch(e){}if(own!==null){location.reload();return new Promise(()=>{})}}}
  if(u){btn.textContent="sign out";$("#dashb").classList.remove("hide");$("#mybee").classList.remove("hide")}
  if(u)f.D.get(f.D.ref(f.db,"admins/"+u.uid)).then(s=>{window.IS_ADMIN=s.exists();const n=document.querySelector(".nav");if(window.IS_ADMIN&&n&&!document.getElementById("adminl")){const x=document.createElement("a");x.id="adminl";x.href=ROOT+"admin/";x.textContent="admin";n.insertBefore(x,n.firstChild)}}).catch(()=>{});
- btn.onclick=()=>{if(u){try{["beez","beez_my","beez_uid"].forEach(k=>localStorage.removeItem(k))}catch(e){}}if(u)f.Au.signOut(f.auth).then(()=>location.href=ROOT||"./");else $("#adlg").showModal()};
+ btn.onclick=()=>{if(u){try{["beez","beez_my","beez_uid","beez_set","beez_bg","beez_name"].forEach(k=>localStorage.removeItem(k))}catch(e){}}if(u)f.Au.signOut(f.auth).then(()=>location.href=ROOT||"./");else $("#adlg").showModal()};
  const run=p=>{if(!f){err.textContent="firebase isn’t set up yet. paste your config at the top of shared.js.";return}err.textContent="";try{sessionStorage.setItem("beez_dash","1")}catch(x){}p().then(()=>{try{sessionStorage.removeItem("beez_dash")}catch(x){}location.href=ROOT+"dashboard/"}).catch(e=>{try{sessionStorage.removeItem("beez_dash")}catch(x){}err.textContent=e.code==="auth/unauthorized-domain"?"unauthorized domain. add this exact host in firebase authorized domains: "+location.hostname:(e.code||"error").replace("auth/","").replace(/-/g," ")})};
  const cred=()=>[f.auth,$("#aem").value.trim(),$("#apw").value];
  $("#agg").onclick=()=>run(async()=>{
