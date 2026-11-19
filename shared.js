@@ -1,4 +1,4 @@
-const MAIL_URL="https://script.google.com/macros/s/AKfycbz6_Pu7GvrtHZ0IFXTRndeveNGHbIG3kwbZ00j2L0mCFdKZd3_QH38KxNnETXtzC6rtmA/exec";/* paste your apps script web app url here (ends in /exec) */
+const MAIL_URL="https://script.google.com/macros/s/AKfycbz6_Pu7GvrtHZ0IFXTRndeveNGHbIG3kwbZ00j2L0mCFdKZd3_QH38KxNnETXtzC6rtmA/exec";/* verify email + admin verify script */const RESET_URL="https://script.google.com/macros/s/AKfycbwBVfeLUeIlzYkY9Vb_i_bbg4vFCFPGMICjBu7TVN1pFTrIH73BmqEx4aMjuYPl2PN7/exec";/* password reset script *//* paste your apps script web app url here (ends in /exec) */
 async function sendVerify(f,u){if(MAIL_URL){const t=await u.getIdToken(true),r=await fetch(MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({idToken:t})});let j=null;try{j=await r.json()}catch(e){}if(!r.ok||!j||!j.ok){const m="email error: "+((j&&j.error)||("no reply "+r.status));try{toast(m)}catch(e){}throw new Error(m)}return}return f.Au.sendEmailVerification(u,{url:new URL(ROOT+"dashboard/",location.href).href})}
 
 const FB_CONFIG={apiKey:"AIzaSyC3Xnc3Cc63B8v1nLPONlP5Up_FbGrdon4",authDomain:"beez-7c6a4.firebaseapp.com",databaseURL:"https://beez-7c6a4-default-rtdb.firebaseio.com",projectId:"beez-7c6a4",storageBucket:"beez-7c6a4.firebasestorage.app",messagingSenderId:"928305285561",appId:"1:928305285561:web:b9b46a0eebecdbd13f8e68",measurementId:"G-YZKBTPM6G0"};
@@ -12,7 +12,7 @@ const fb=(async()=>{
  await auth.authStateReady();
  const Au0=Au,Au1=Object.assign({},Au0,{
   sendEmailVerification:(u,o)=>sendVerify({Au:Au0},u),
-  sendPasswordResetEmail:async(a,em,o)=>{if(!MAIL_URL)return Au0.sendPasswordResetEmail(a,em,o);const r=await fetch(MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({action:"reset",email:em})});if(!r.ok)throw new Error("reset failed")}});
+  sendPasswordResetEmail:async(a,em,o)=>{if(!(RESET_URL||MAIL_URL))return Au0.sendPasswordResetEmail(a,em,o);const r=await fetch(RESET_URL||MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({action:"reset",email:em})});if(!r.ok)throw new Error("reset failed")}});
  return{Au:Au1,D,auth,db};
 })().catch(e=>{console.warn("firebase init failed",e);return null});
 async function fbRoom(f,name){
@@ -115,7 +115,7 @@ const whenAuth=fb.then(async f=>{
  $("#ain").onclick=()=>run(()=>f.Au.signInWithEmailAndPassword(...cred()));
  $("#acr").onclick=()=>run(async()=>{const c=await f.Au.createUserWithEmailAndPassword(...cred());try{await sendVerify(f,c.user)}catch(e){}return c});
  if(f&&!document.getElementById("afg")&&document.getElementById("acr")){const g=document.createElement("button");g.className="chip";g.id="afg";g.type="button";g.textContent="forgot password?";$("#acr").parentElement.appendChild(g);
-  g.onclick=async()=>{const em=$("#aem").value.trim();if(!em){err.style.color="var(--bad)";err.textContent="enter your email first.";return}try{if(MAIL_URL){const rr=await fetch(MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({action:"reset",email:em})});if(!rr.ok)throw 0}else await f.Au.sendPasswordResetEmail(f.auth,em);err.style.color="var(--ok)";err.textContent="if that email has an account, a reset link is on its way."}catch(e){err.style.color="var(--bad)";err.textContent=(e.code||"error").replace("auth/","").replace(/-/g," ")}}}
+  g.onclick=async()=>{const em=$("#aem").value.trim();if(!em){err.style.color="var(--bad)";err.textContent="enter your email first.";return}try{if(RESET_URL||MAIL_URL){const rr=await fetch(RESET_URL||MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({action:"reset",email:em})});if(!rr.ok)throw 0}else await f.Au.sendPasswordResetEmail(f.auth,em);err.style.color="var(--ok)";err.textContent="if that email has an account, a reset link is on its way."}catch(e){err.style.color="var(--bad)";err.textContent=(e.code||"error").replace("auth/","").replace(/-/g," ")}}}
  if(u&&!u.emailVerified&&(u.providerData||[]).some(p=>p.providerId==="password")){window.NEEDS_VERIFY=true;showVerify(f,u)}
  if(u){const ref=f.D.ref(f.db,"users/"+u.uid);let ready=false;
   window.pushUser=()=>{if(!ready||typeof stats==="undefined")return;f.D.set(ref,{s:{g:stats.g,w:stats.w,b:stats.b,c:stats.c,m:stats.m,a:stats.a,bw:stats.bw,bs:stats.bs},hist:stats.hist}).catch(()=>{})};
