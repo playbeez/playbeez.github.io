@@ -97,13 +97,13 @@ function note(){const n=new Date(),nm=Date.UTC(n.getUTCFullYear(),n.getUTCMonth(
  $("#lnote").textContent=per==="week"?"weekly rankings reset every monday at 00:00 utc. resets in "+dur(nw-n.getTime())+".":per==="month"?"monthly rankings reset on the 1st at 00:00 utc. resets in "+dur(nm-n.getTime())+".":"every game since the beginning."}
 function render(){const me=window.MYID;note();
  const a=(rows[per]||[]).slice().sort((x,y)=>(y[met]||0)-(x[met]||0)).filter(r=>(r[met]||0)>0).slice(0,25);
- $("#llist").innerHTML=a.map((v,k)=>`<div class="lrow${k<3?" top":""}"><span style="display:flex;align-items:center;gap:10px">${medalHtml(k,34)} ${beeSvg(v.bee,26)}${esc(v.name||"bee")}${v.id===me?" (you)":""}${pillsFor(v.id)}</span><b class="mono">${(v[met]||0).toLocaleString()}</b></div>`).join("")||"<div><span>nobody here yet. be the first.</span></div>"}
+ $("#llist").innerHTML=a.map((v,k)=>`<div class="lrow${k<3?" top":""}"><span style="display:flex;align-items:center;gap:10px">${medalHtml(k,34)} ${beeSvg(v.bee,26)}<a class="ulink" href="${ROOT}user/?id=${v.id}">${esc(v.name||"bee")}</a>${v.id===me?" (you)":""}${pillsFor(v.id)}</span><b class="mono">${(v[met]||0).toLocaleString()}</b></div>`).join("")||"<div><span>nobody here yet. be the first.</span></div>"}
 $$("#lmet .chip").forEach(b=>b.onclick=()=>{$$("#lmet .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");met=b.dataset.m;render()});
 $$("#lper .chip").forEach(b=>b.onclick=()=>{$$("#lper .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");per=b.dataset.p;render()});
 whenAuth.then(async({f,u})=>{
  if(!u){$("#llist").innerHTML='<div><span>sign in to see the leaderboard.</span><button class="chip" id="lsi">sign in</button></div>';$("#lsi").onclick=()=>$("#adlg").showModal();note();return}
  window.MYID=u.uid;await loadBadgeData(f);
- const D=f.D,R=p=>D.ref(f.db,p),conv=s=>{const o=[];s.forEach(c=>{const v=c.val()||{};o.push({id:c.key,name:v.name||"",w:+v.w||0,g:+v.g||0,bw:+v.bw||0,b:+v.b||0,bee:v.bee})});return o},bad=()=>{$("#llist").innerHTML="<div><span>couldn’t load. check your database rules.</span></div>"};
+ const D=f.D,R=p=>D.ref(f.db,p),conv=s=>{const o=[];s.forEach(c=>{const v=c.val()||{};PG[c.key]=+v.g||PG[c.key]||0;o.push({id:c.key,name:v.name||"",w:+v.w||0,g:+v.g||0,bw:+v.bw||0,b:+v.b||0,bee:v.bee})});return o},bad=()=>{$("#llist").innerHTML="<div><span>couldn’t load. check your database rules.</span></div>"};
  const now=Date.now();
  D.onValue(R("players"),s=>{rows.all=conv(s);render()},bad);
  D.onValue(R("periods/week/"+weekKeyOf(now)),s=>{rows.week=conv(s);render()},()=>{});
