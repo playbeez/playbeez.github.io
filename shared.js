@@ -231,7 +231,7 @@ applyLook();
 function showVerify(f,u){if(document.getElementById("vbar"))return;const el=document.createElement("div");el.id="vbar";el.className="gmsg event";el.style.flexWrap="wrap";
  const url=()=>({url:new URL(ROOT+"dashboard/",location.href).href}),t=document.createElement("span");t.textContent="verify your email to play multiplayer and join the leaderboard. we sent a link to "+u.email+".";
  const a=document.createElement("button");a.textContent="resend email";const b=document.createElement("button");b.textContent="i verified it";
- a.onclick=async()=>{try{await sendVerify(f,f.auth.currentUser);toast("verification email sent");a.disabled=true;let n=60;const iv=setInterval(()=>{n--;a.textContent="resend in "+n+"s";if(n<=0){clearInterval(iv);a.disabled=false;a.textContent="resend email"}},1000)}catch(e){toast(e.code==="auth/too-many-requests"?"slow down and try again soon":"couldn't send the email")}};
+ a.onclick=async()=>{try{await sendVerify(f,f.auth.currentUser);toast("verification email sent");a.disabled=true;let n=60;const iv=setInterval(()=>{n--;a.textContent="resend in "+n+"s";if(n<=0){clearInterval(iv);a.disabled=false;a.textContent="resend email"}},1000)}catch(e){toast(e.code==="auth/too-many-requests"?"slow down and try again soon":(e.message&&/^email error/.test(e.message)?e.message:"couldn't send the email"))}};
  b.onclick=async()=>{try{await f.auth.currentUser.reload();if(f.auth.currentUser.emailVerified){await f.auth.currentUser.getIdToken(true);location.reload()}else toast("not verified yet. open the link in your email first")}catch(e){toast("couldn't check. try again")}};
  el.append(t,a,b);const hd=document.querySelector("header");if(hd)hd.parentNode.insertBefore(el,hd.nextSibling)}
 
