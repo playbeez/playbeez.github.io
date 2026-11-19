@@ -10,7 +10,10 @@ const fb=(async()=>{
  const [A,Au,D]=await Promise.all([import(FB_BASE+"firebase-app.js"),import(FB_BASE+"firebase-auth.js"),import(FB_BASE+"firebase-database.js")]);
  const app=A.initializeApp(FB_CONFIG),auth=Au.getAuth(app),db=D.getDatabase(app);
  await auth.authStateReady();
- return{Au,D,auth,db};
+ const Au0=Au,Au1=Object.assign({},Au0,{
+  sendEmailVerification:(u,o)=>sendVerify({Au:Au0},u),
+  sendPasswordResetEmail:async(a,em,o)=>{if(!MAIL_URL)return Au0.sendPasswordResetEmail(a,em,o);const r=await fetch(MAIL_URL,{method:"POST",headers:{"content-type":"text/plain"},body:JSON.stringify({action:"reset",email:em})});if(!r.ok)throw new Error("reset failed")}});
+ return{Au:Au1,D,auth,db};
 })().catch(e=>{console.warn("firebase init failed",e);return null});
 async function fbRoom(f,name){
  const{D,db,auth}=f,me=auth.currentUser.uid,base="rooms/"+name,pr=D.ref(db,base+"/peers/"+me),ev=D.ref(db,base+"/events");
