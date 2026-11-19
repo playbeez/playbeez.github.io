@@ -92,7 +92,7 @@ $("#bcan").onclick=()=>{MY=loadMy();$("#bdlg").close()};
 $("#mybee").onclick=()=>{MY=loadMy();drawMy();$("#bdlg").showModal()};
 function toast(t){const d=document.createElement("div");d.textContent=t;d.style.cssText="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--y);color:var(--onY);font-weight:800;padding:10px 18px;border-radius:12px;z-index:99;animation:toast 1.8s both";document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
 $("#bsave").onclick=()=>{try{localStorage.setItem("beez_my",JSON.stringify(MY))}catch(e){}window.push&&push();window.saveBeeRemote&&saveBeeRemote();$("#bdlg").close();window.renderDash&&renderDash();toast("mybee saved")};
-async function pushPlayer(){try{const db=await claude.use("db"),user=await claude.use("user");if(!db||!user)return;const s=typeof stats!=="undefined"?stats:JSON.parse(localStorage.getItem("beez")||"{}");await db.collection("players").doc(await user.id()).set({g:s.g||0,w:s.w||0,b:s.b||0,bw:s.bw||0,bee:MY});await pushPeriods(s)}catch(e){}}
+async function pushPlayer(){try{const db=await claude.use("db"),user=await claude.use("user");if(!db||!user)return;const s=typeof stats!=="undefined"?stats:JSON.parse(localStorage.getItem("beez")||"{}");await db.collection("players").doc(await user.id()).set({g:s.g||0,w:s.w||0,b:s.b||0,bw:s.bw||0,hc:s.hcb||0,hw:s.hcw||0,bee:MY});await pushPeriods(s)}catch(e){}}
 function push(){return pushPlayer()}
 $("#theme").onclick=()=>{const h=document.documentElement;h.dataset.theme=h.dataset.theme==="dark"?"light":"dark"};
 $("#mybee").classList.add("hide");
@@ -146,11 +146,11 @@ document.head.appendChild(Object.assign(document.createElement("style"),{textCon
 const BADGES={admin:{l:"admin",c:"#f87171"},verified:{l:"verified",c:"#FDB800"},founder:{l:"founder",c:"#FDB800"},early:{l:"early bee",c:"#4ade80"},tester:{l:"tester",c:"#60a5fa"},champion:{l:"champion",c:"#c084fc"},vip:{l:"vip",c:"#f472b6"},helper:{l:"helper",c:"#2dd4bf"}};
 let BADGEDATA={},ADMINIDS={};
 const badgePill=id=>BADGES[id]?`<span class="bdg" style="--c:${BADGES[id].c}"><i></i>${BADGES[id].l}</span>`:"";
-let PG={};
-const isVer=uid=>!!(ADMINIDS[uid]||(BADGEDATA[uid]||{}).verified||(PG[uid]||0)>=100);
+let FC={};
+const isVer=uid=>!!(ADMINIDS[uid]||(BADGEDATA[uid]||{}).verified||(FC[uid]||0)>=100);
 const verMark=(uid,sz)=>isVer(uid)?`<svg class="vmk" width="${sz||16}" height="${sz||16}" viewBox="0 0 24 24" role="img" aria-label="verified"><title>verified</title><path d="M12 1.5l2.6 2 3.3-.1 1 3.1 2.7 1.9-1 3.1 1 3.1-2.7 1.9-1 3.1-3.3-.1-2.6 2-2.6-2-3.3.1-1-3.1-2.7-1.9 1-3.1-1-3.1 2.7-1.9 1-3.1 3.3.1z" fill="#FDB800" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.8 12.4l3 3 5.4-6" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`:"";
 const pillsFor=uid=>verMark(uid)+(ADMINIDS[uid]?badgePill("admin"):"")+Object.keys(BADGEDATA[uid]||{}).filter(k=>k!=="verified"&&BADGEDATA[uid][k]).map(badgePill).join("");
-async function loadBadgeData(f){try{BADGEDATA=(await f.D.get(f.D.ref(f.db,"badges"))).val()||{}}catch(e){}try{ADMINIDS=(await f.D.get(f.D.ref(f.db,"admins"))).val()||{}}catch(e){}}
+async function loadBadgeData(f){try{BADGEDATA=(await f.D.get(f.D.ref(f.db,"badges"))).val()||{}}catch(e){}try{ADMINIDS=(await f.D.get(f.D.ref(f.db,"admins"))).val()||{}}catch(e){}try{const q=(await f.D.get(f.D.ref(f.db,"followers"))).val()||{};FC={};for(const k in q)FC[k]=Object.keys(q[k]||{}).length}catch(e){}}
 function showGlobal(v){const old=document.getElementById("gmsg");if(old)old.remove();
  let dm="";try{dm=localStorage.getItem("beez_dm")}catch(e){}
  if(!v||!v.text||v.id===dm||(v.until&&Date.now()>v.until))return;
@@ -229,3 +229,21 @@ function showVerify(f,u){if(document.getElementById("vbar"))return;const el=docu
  a.onclick=async()=>{try{await sendVerify(f,f.auth.currentUser);toast("verification email sent");a.disabled=true;let n=60;const iv=setInterval(()=>{n--;a.textContent="resend in "+n+"s";if(n<=0){clearInterval(iv);a.disabled=false;a.textContent="resend email"}},1000)}catch(e){toast(e.code==="auth/too-many-requests"?"slow down and try again soon":"couldn't send the email")}};
  b.onclick=async()=>{try{await f.auth.currentUser.reload();if(f.auth.currentUser.emailVerified){await f.auth.currentUser.getIdToken(true);location.reload()}else toast("not verified yet. open the link in your email first")}catch(e){toast("couldn't check. try again")}};
  el.append(t,a,b);const hd=document.querySelector("header");if(hd)hd.parentNode.insertBefore(el,hd.nextSibling)}
+
+(function(){const nav=document.querySelector(".nav");if(!nav||typeof whenAuth==="undefined")return;
+const PG_=[["play","play/"],["hardcore mode","play/?hardcore=1"],["leaderboard","dashboard/leaderboard/"],["dashboard","dashboard/"],["settings","settings/"],["privacy","privacy/"],["terms","terms/"]];
+document.head.appendChild(Object.assign(document.createElement("style"),{textContent:"#sdlg{background:var(--bg2,#16140f);color:var(--ink,#f6f1e3);border:1px solid var(--line,#2f2b20);border-radius:20px;padding:18px;width:min(520px,92vw);margin:8vh auto auto;text-align:left;text-transform:lowercase}#sdlg::backdrop{background:rgba(0,0,0,.6)}#sdlg input{width:100%;font:inherit;font-size:17px;padding:12px 14px;border-radius:12px;border:1px solid var(--line,#2f2b20);background:var(--card,#1a1812);color:inherit;outline:0}#sdlg input:focus{border-color:var(--y,#FDB800)}#sres{max-height:56vh;overflow:auto;margin-top:10px}#sres a{display:flex;align-items:center;gap:10px;padding:10px 6px;border-top:1px solid var(--line,#2f2b20);color:inherit;text-decoration:none;font-weight:700}#sres a:hover{background:rgba(253,184,0,.1)}#sres small{margin-left:auto;color:var(--mute,#9b9585);font-weight:500}#sres .sh{font-size:11px;letter-spacing:.1em;color:var(--mute,#9b9585);padding:10px 6px 4px;font-weight:800}"}));
+const d=document.createElement("dialog");d.id="sdlg";d.innerHTML='<input id="sq" placeholder="search users, pages, games" autocomplete="off" autocapitalize="off" spellcheck="false"><div id="sres"></div>';document.body.appendChild(d);
+const b=document.createElement("button");b.id="sbtn";b.textContent="search";b.setAttribute("aria-label","search");nav.insertBefore(b,nav.firstChild);
+let P_=null,ME_=null,loading=false;
+const load=()=>{if(P_||loading)return;loading=true;whenAuth.then(async({f,u})=>{ME_=u;if(!u){P_={};render();return}await loadBadgeData(f);try{P_=(await f.D.get(f.D.ref(f.db,"players"))).val()||{}}catch(e){P_={}}render()})};
+function render(){const q=d.querySelector("#sq").value.trim().toLowerCase(),el=d.querySelector("#sres");let h="";
+ const pg=PG_.filter(p=>!q||p[0].includes(q));
+ if(q.length){let us=[];if(P_)us=Object.keys(P_).filter(k=>(P_[k].name||"").toLowerCase().includes(q)||k===d.querySelector("#sq").value.trim()).sort((a,c)=>{const x=(P_[a].name||"").toLowerCase().startsWith(q)?0:1,y=(P_[c].name||"").toLowerCase().startsWith(q)?0:1;return x-y||((FC[c]||0)-(FC[a]||0))}).slice(0,12);
+  if(us.length)h+='<div class="sh">users</div>'+us.map(k=>`<a href="${ROOT}user/?id=${k}">${beeSvg(P_[k].bee,26)}${esc(P_[k].name||"bee")}${verMark(k,14)}<small>${(FC[k]||0).toLocaleString()} followers</small></a>`).join("");
+  else if(P_===null)h+='<div class="sh">searching users...</div>';else if(!ME_)h+='<div class="sh">sign in to search users</div>';else h+='<div class="sh">no users found</div>'}
+ if(pg.length)h+='<div class="sh">pages and games</div>'+pg.map(p=>`<a href="${ROOT}${p[1]}">${esc(p[0])}</a>`).join("");
+ el.innerHTML=h}
+const open=()=>{if(!d.open)d.showModal();load();render();setTimeout(()=>d.querySelector("#sq").focus(),30)};
+b.onclick=open;d.querySelector("#sq").oninput=render;d.addEventListener("click",e=>{if(e.target===d)d.close()});
+document.addEventListener("keydown",e=>{if(e.key==="/"&&!/input|textarea|select/i.test((document.activeElement||{}).tagName||"")&&!d.open){e.preventDefault();open()}})})();
