@@ -66,7 +66,7 @@ footer{border-top:1px solid var(--line);padding:26px 5vw;color:var(--mute);font-
 @media(max-width:860px){.grid3,.grid4{grid-template-columns:1fr 1fr}main{grid-template-columns:1fr}.stats{gap:18px}}@media(max-width:520px){.grid3,.grid4{grid-template-columns:1fr}}
 a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:inherit}a.big{color:var(--onY)}a.tier{display:block;text-decoration:none}.hide{display:none!important}
 </style>
-<style>.lrow.top{background:linear-gradient(90deg,rgba(253,184,0,.16),transparent)!important}.lrow.top:first-child{background:linear-gradient(90deg,rgba(253,184,0,.28),transparent)!important}</style>
+<style>.lrow.podium{background:linear-gradient(90deg,rgba(253,184,0,.16),transparent)!important}.lrow.podium:first-child{background:linear-gradient(90deg,rgba(253,184,0,.28),transparent)!important}</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute"><symbol id="bee" viewBox="14 14 72 72"><circle cx="50" cy="50" r="31" fill="#FDB800"/><clipPath id="bc"><circle cx="50" cy="50" r="31"/></clipPath><g clip-path="url(#bc)"><rect x="0" y="49.5" width="100" height="10"/><rect x="0" y="64.4" width="100" height="40"/></g><circle cx="50" cy="50" r="31" fill="none" stroke="#000" stroke-width="4"/><path d="M28.5 28L22.8 21.3M71.5 28L77.1 22.5" stroke="#000" stroke-width="3.6" stroke-linecap="round"/></symbol></svg>
@@ -97,7 +97,7 @@ function note(){const n=new Date(),nm=Date.UTC(n.getUTCFullYear(),n.getUTCMonth(
  $("#lnote").textContent=per==="week"?"weekly rankings reset every monday at 00:00 utc. resets in "+dur(nw-n.getTime())+".":per==="month"?"monthly rankings reset on the 1st at 00:00 utc. resets in "+dur(nm-n.getTime())+".":"every game since the beginning."}
 function render(){const me=window.MYID;note();
  const a=(rows[per]||[]).slice().sort((x,y)=>(y[met]||0)-(x[met]||0)).filter(r=>(r[met]||0)>0).slice(0,25);
- $("#llist").innerHTML=a.map((v,k)=>`<div class="lrow${k<3?" top":""}"><span style="display:flex;align-items:center;gap:10px">${medalHtml(k,34)} ${beeSvg(v.bee,26)}<a class="ulink" href="${ROOT}user/?id=${v.id}">${esc(v.name||"bee")}</a>${v.id===me?" (you)":""}${pillsFor(v.id)}</span><b class="mono">${(v[met]||0).toLocaleString()}</b></div>`).join("")||"<div><span>nobody here yet. be the first.</span></div>"}
+ $("#llist").innerHTML=a.map((v,k)=>`<div class="lrow${k<3?" podium":""}"><span style="display:flex;align-items:center;gap:10px">${medalHtml(k,34)} ${beeSvg(v.bee,26)}<a class="ulink" href="${ROOT}user/?id=${v.id}">${esc(v.name||"bee")}</a>${v.id===me?" (you)":""}${pillsFor(v.id)}</span><b class="mono">${(v[met]||0).toLocaleString()}</b></div>`).join("")||"<div><span>nobody here yet. be the first.</span></div>"}
 $$("#lmet .chip").forEach(b=>b.onclick=()=>{$$("#lmet .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");met=b.dataset.m;render()});
 $$("#lper .chip").forEach(b=>b.onclick=()=>{$$("#lper .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");per=b.dataset.p;render()});
 whenAuth.then(async({f,u})=>{
