@@ -100,7 +100,7 @@ dialog::backdrop{background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
   <h1>Outspell<br>the <span class="tiles"><span class="t">H</span><span class="t">I</span><span class="t">V</span><span class="t">E</span></span>.</h1>
   <p class="sub">Hear the word, type it before the buzzer, and race your friends in real time. Fastest correct speller takes the honey.</p>
   <div class="cta"><button class="big" id="c1">play now</button><button class="ghost" id="c2">create a room</button></div>
-  <div class="stats"><div><b class="mono" id="sg">0</b><span>games played</span></div><div><b class="mono" id="sw">0</b><span>words spelled</span></div><div><b class="mono" id="sp">1</b><span>bees playing</span></div><div><b class="mono" id="su">0</b><span>beez born</span></div></div>
+  <div class="stats"><div><b class="mono" id="sg">0</b><span>games played</span></div><div><b class="mono" id="sw">0</b><span>words spelled</span></div><div><b class="mono" id="sp">1</b><span>bees playing</span></div><div><b class="mono" id="su">0</b><span>beez born</span></div><div><b class="mono" id="sc">0</b><span>communities</span></div></div>
  </section>
 
 </main>
@@ -295,7 +295,7 @@ try{const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.
 $("#mute").onclick=()=>{mute=!mute;$("#mute").textContent=mute?"sound off":"sound on"};
 $("#sh").onclick=async()=>{try{await navigator.clipboard.writeText("beez: "+G.ok+"/"+G.words.length+" correct, "+G.pts+" points ("+P.diff+"). outspell the hive.");$("#sh").textContent="copied"}catch(e){$("#sh").textContent="copy failed"}};
 function showStats(){const g=dbOn?tot.g:stats.g,w=dbOn?tot.w:stats.w;$("#sg").textContent=g.toLocaleString();$("#sw").textContent=w.toLocaleString()}
-(async()=>{try{const f=await fb;if(!f)return;f.D.onValue(f.D.ref(f.db,"totals"),s=>{const v=s.val()||{};$("#su").textContent=(+v.u||0).toLocaleString();if(!f.auth.currentUser){tot={g:+v.g||0,w:+v.w||0};dbOn=true;showStats()}},()=>{});if(!f.auth.currentUser)f.D.onValue(f.D.ref(f.db,"rooms/lobby/peers"),s=>{$("#sp").textContent=Math.max(1,s.size)},()=>{})}catch(e){}})();
+(async()=>{try{const f=await fb;if(!f)return;f.D.onValue(f.D.ref(f.db,"communities"),s=>{$("#sc").textContent=s.size.toLocaleString()},()=>{});f.D.onValue(f.D.ref(f.db,"totals"),s=>{const v=s.val()||{};$("#su").textContent=(+v.u||0).toLocaleString();if(!f.auth.currentUser){tot={g:+v.g||0,w:+v.w||0};dbOn=true;showStats()}},()=>{});if(!f.auth.currentUser)f.D.onValue(f.D.ref(f.db,"rooms/lobby/peers"),s=>{$("#sp").textContent=Math.max(1,s.size)},()=>{})}catch(e){}})();
 function push(){try{mine&&mine.set({g:stats.g,w:stats.w,bee:MY}).catch(()=>{})}catch(e){}try{window.pushUser&&pushUser()}catch(e){}}
 (async()=>{try{const db=await claude.use("db"),user=await claude.use("user");if(!db||!user)return;const col=db.collection("players");mine=col.doc(await user.id());col.onSnapshot(s=>{let g=0,w=0;lbd=[];s.docs.forEach(d=>{const v=d.data()||{};g+=+v.g||0;w+=+v.w||0;lbd.push({id:d.id,name:v.name||"",w:+v.w||0,g:+v.g||0,bee:v.bee})});tot={g,w};dbOn=true;showStats();window.renderDash&&renderDash()},()=>{});push()}catch(e){}})();
 (async()=>{try{const room=await claude.use("room");if(!room||!room.join)return;const L=await room.join("lobby");L.onPeers(c=>{$("#sp").textContent=Math.max(1,c.peers.length)});await L.presence({here:1})}catch(e){}})();
