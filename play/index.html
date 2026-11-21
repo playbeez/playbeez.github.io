@@ -108,6 +108,7 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
      <button class="opt on" data-m="practice"><span><b>Practice</b><small>No timer. Just vibes.</small></span><i></i></button>
      <button class="opt" data-m="timed"><span><b>Timed</b><small>20 seconds a word.</small></span><i></i></button>
      <button class="opt" data-m="hardcore"><span><b>Hardcore</b><small>one miss and you lose. your mybee is on the line.</small></span><i></i></button>
+     <button class="opt" data-m="infinite"><span><b>Infinite</b><small>endless words, 3 lives. the timer gets shorter.</small></span><i></i></button>
     </div>
     <div id="multi" class="hide">
      <div class="lbl" style="margin-top:0">YOUR NAME</div><input class="f" id="nm" maxlength="14">
@@ -128,7 +129,7 @@ a.big,a.ghost{display:inline-block;text-align:center;text-decoration:none;color:
    <button class="chip" style="margin-top:8px" id="lv">Leave</button>
   </div>
   <div id="play" class="hide pad"><div class="cdnum" id="cdnum"></div>
-   <div class="hud"><span>Word <b id="pi">1</b>/<span id="pn">8</span></span><span>Score <b id="ps">0</b></span><span class="mono" id="pt"></span></div>
+   <div class="hud"><span>Word <b id="pi">1</b>/<span id="pn">8</span></span><span>Score <b id="ps">0</b></span><span id="lvs" style="color:var(--bad)"></span><span class="mono" id="pt"></span></div>
    <div class="bar"><i id="pb"></i></div><div class="stk" id="stk"></div>
    <div class="word" id="wd"><input id="in" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"></div>
    <div class="fb" id="fb"></div>
@@ -174,7 +175,7 @@ W.impossible.push(..."reservation performing absolutely calculator significantly
 W.mixed=[].concat(W.easy,W.medium,W.hard,W.impossible);
 const P={name:"Bee"+(100+Math.floor(Math.random()*900)),diff:"easy",mode:"practice",tab:"solo",n:8};
 let G=null,R=null,isHost=false,peers=[],scores={},answered={},adv={},hostT=null,tick=null,stats={g:0,b:0,w:0,h:[],c:0,m:0,a:0,bw:0,hist:[],bs:0},tot={g:0,w:0},dbOn=false,mine=null,lbd=[];
-try{const s=JSON.parse(localStorage.getItem("beez")||"{}");stats.g=s.g||0;stats.b=s.b||0;stats.w=s.w||0;stats.h=s.h||[];stats.c=s.c||0;stats.m=s.m||0;stats.a=s.a||0;stats.bw=s.bw||0;stats.bs=s.bs||0;stats.hcb=s.hcb||0;stats.hcw=s.hcw||0;stats.hist=s.hist||[]}catch(e){}
+try{const s=JSON.parse(localStorage.getItem("beez")||"{}");stats.g=s.g||0;stats.b=s.b||0;stats.w=s.w||0;stats.h=s.h||[];stats.c=s.c||0;stats.m=s.m||0;stats.a=s.a||0;stats.bw=s.bw||0;stats.bs=s.bs||0;stats.hcb=s.hcb||0;stats.ib=s.ib||0;stats.hcw=s.hcw||0;stats.hist=s.hist||[]}catch(e){}
 const saveStats=()=>{try{localStorage.setItem("beez",JSON.stringify(stats))}catch(e){}showStats();renderLb();push();window.renderDash&&renderDash()};saveStats();
 $("#nm").value=P.name;$("#nm").oninput=e=>P.name=e.target.value.trim()||"Bee";
 const view=id=>["home","lobby","play","end"].forEach(v=>$("#"+v).classList.toggle("hide",v!==id));
@@ -185,12 +186,17 @@ const toCard=()=>$("#card").scrollIntoView({behavior:"smooth",block:"center"});
 $$(".tier").forEach(b=>b.onclick=()=>{view("home");tab("solo");$(".chip[data-d="+b.dataset.d+"]").click();toCard()});
 const tab=t=>{P.tab=t;$("#tS").classList.toggle("on",t==="solo");$("#tM").classList.toggle("on",t==="multi");$("#solo").classList.toggle("hide",t!=="solo");$("#multi").classList.toggle("hide",t!=="multi");$("#go").classList.toggle("hide",t==="multi")};
 $("#tS").onclick=()=>tab("solo");$("#tM").onclick=()=>tab("multi");
-$$(".opt").forEach(b=>b.onclick=()=>{$$(".opt").forEach(x=>x.classList.remove("on"));b.classList.add("on");P.mode=b.dataset.m;$("#go").textContent=P.mode==="hardcore"?"Start hardcore":P.mode==="timed"?"Start timed game":"Start practice"});
+$$(".opt").forEach(b=>b.onclick=()=>{$$(".opt").forEach(x=>x.classList.remove("on"));b.classList.add("on");P.mode=b.dataset.m;$("#go").textContent=P.mode==="infinite"?"Start infinite":P.mode==="hardcore"?"Start hardcore":P.mode==="timed"?"Start timed game":"Start practice"});
 $$(".chip[data-d]").forEach(b=>b.onclick=()=>{$$(".chip[data-d]").forEach(x=>x.classList.remove("on"));b.classList.add("on");P.diff=b.dataset.d});
 const pick=(d,n)=>{const a=[...new Set(W[d])].sort(()=>Math.random()-.5);return a.slice(0,n)};
-const speak=w=>{try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.rate=(typeof BS!=="undefined"&&BS.rate)||.85;u.onstart=()=>$("#hear").classList.add("talk");u.onend=()=>$("#hear").classList.remove("talk");speechSynthesis.speak(u)}catch(e){}};
+const near=(a,b)=>{a=(a||"").toLowerCase();if(a.length<2||a===b)return false;const m=a.length,n=b.length;if(Math.abs(m-n)>2)return false;let q=[...Array(n+1).keys()];for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(q[j]+1,c[j-1]+1,q[j-1]+(a[i-1]===b[j-1]?0:1));q=c}const d=q[n];if(m===n){for(let i=0;i<n-1;i++)if(a[i]!==b[i]){if(a[i]===b[i+1]&&a[i+1]===b[i]&&a.slice(i+2)===b.slice(i+2))return true;break}}return d<=1||(n>=7&&d<=2)};
+let VOICE=null;const pickVoice=()=>{try{const v=speechSynthesis.getVoices();if(!v.length)return;VOICE=v.find(x=>/^en[-_]US/i.test(x.lang)&&x.localService)||v.find(x=>/^en/i.test(x.lang)&&x.localService)||v.find(x=>/^en/i.test(x.lang))||null}catch(e){}};
+try{pickVoice();speechSynthesis.addEventListener("voiceschanged",pickVoice)}catch(e){}
+let warmed=false;const warm=()=>{if(warmed)return;warmed=true;try{pickVoice();const u=new SpeechSynthesisUtterance(" ");u.volume=0;if(VOICE)u.voice=VOICE;speechSynthesis.speak(u)}catch(e){}};
+document.addEventListener("pointerdown",warm,{once:true});document.addEventListener("keydown",warm,{once:true});
+const speak=w=>{try{if(speechSynthesis.speaking||speechSynthesis.pending)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.lang="en-US";if(VOICE)u.voice=VOICE;u.rate=(typeof BS!=="undefined"&&BS.rate)||.85;u.onstart=()=>$("#hear").classList.add("talk");u.onend=()=>$("#hear").classList.remove("talk");speechSynthesis.speak(u)}catch(e){}};
 $("#hear").onclick=()=>{G&&speak(G.word);$("#in").focus()};
-$("#go").onclick=()=>{if(P.mode==="hardcore"){$("#hdlg").showModal();return}begin(pick(P.diff,P.n),P.mode==="timed"?20000:0,false)};
+$("#go").onclick=()=>{if(P.mode==="hardcore"){$("#hdlg").showModal();return}if(P.mode==="infinite"){begin(pick(P.diff,9999),20000,false,false,true);return}begin(pick(P.diff,P.n),P.mode==="timed"?20000:0,false)};
 $("#hno").onclick=()=>$("#hdlg").close();$("#hyes").onclick=()=>{$("#hdlg").close();begin(pick(P.diff,P.n),20000,false,true)};
 function loseBee(){MY=normBee(null);try{localStorage.setItem("beez_my",JSON.stringify(MY))}catch(e){}try{window.saveBeeRemote&&saveBeeRemote()}catch(e){}try{drawMy()}catch(e){}}
 $("#quick").onclick=()=>begin(pick("mixed",8),20000,false);
@@ -202,38 +208,39 @@ function hx(x,y,dx,dy,cls){const p=document.createElement("i");p.className="hx "
 function burst(ok){if(!ok)return;const r=$("#wd").getBoundingClientRect();for(let i=0;i<14;i++)hx(r.left+r.width/2,r.top+r.height/2,(Math.random()*2-1)*190,-Math.random()*170-30)}
 function confetti(){for(let i=0;i<46;i++)hx(Math.random()*innerWidth,-20,(Math.random()*2-1)*120,innerHeight*(.6+Math.random()*.4),"fall")}
 function stk(n){const e=$("#stk");e.textContent=n>1?"streak x"+n:"";e.classList.remove("on");void e.offsetWidth;if(n>1)e.classList.add("on")}
-function begin(words,ms,multi,hc){G={hc:!!hc,words,ms,multi,i:0,pts:0,ok:0,streak:0,chars:0,tms:0,word:"",done:true};scores={};answered={};adv={};renderLive();$("#play").classList.toggle("hc",!!hc);view("play");$("#pn").textContent=words.length;cd(()=>G&&round(0))}
+function begin(words,ms,multi,hc,inf){warm();G={hc:!!hc,inf:!!inf,lives:3,words,ms,multi,i:0,pts:0,ok:0,streak:0,chars:0,tms:0,word:"",done:true};scores={};answered={};adv={};renderLive();$("#play").classList.toggle("hc",!!hc);view("play");$("#pn").textContent=inf?"∞":words.length;$("#lvs").textContent=inf?"lives 3":"";cd(()=>G&&round(0))}
 function cd(then){let n=3;const fb=$("#fb");$("#in").disabled=true;$("#wd").querySelectorAll(".wl").forEach(e=>e.remove());$("#pb").style.width="100%";$("#pt").textContent="";fb.style.color="var(--y)";fb.textContent="get ready";const t=setInterval(()=>{if(!G){clearInterval(t);return}if(n>0){fb.textContent="get ready";showCd(n--)}else{clearInterval(t);showCd("go");then()}},800)}
-function round(i){clearInterval(tick);const g=G;$("#play").classList.remove("low");g.i=i;g.word=g.words[i];g.done=false;g.t0=Date.now();
+function round(i){clearInterval(tick);const g=G;$("#play").classList.remove("low");g.i=i;g.word=g.words[i];if(g.inf)g.ms=Math.max(7000,20000-400*i);g.done=false;g.t0=Date.now();
  $("#pi").textContent=i+1;$("#ps").textContent=g.pts;$("#fb").textContent="";$("#in").value="";$("#in").disabled=false;
  $("#wd").querySelectorAll(".wl").forEach(e=>e.remove());
  for(const c of g.word){const s=document.createElement("span");s.className="wl";$("#wd").insertBefore(s,$("#in"))}
- paint();$("#in").focus();setTimeout(()=>speak(g.word),250);
+ paint();$("#in").focus();setTimeout(()=>speak(g.word),80);
  const bar=$("#pb");bar.style.width="100%";$("#pt").textContent=g.ms?"20s":"untimed";
  if(g.ms)tick=setInterval(()=>{const left=Math.max(0,g.ms-(Date.now()-g.t0));bar.style.width=left/g.ms*100+"%";$("#play").classList.toggle("low",left>0&&left<5000);$("#pt").textContent=Math.ceil(left/1000)+"s";if(!left){finish(false,"Time’s up")}},100)}
 function paint(){const v=$("#in").value.toLowerCase().slice(0,G.word.length);$("#wd").querySelectorAll(".wl").forEach((e,k)=>{e.textContent=v[k]||"";e.classList.toggle("f",!!v[k]);e.classList.toggle("cur",k===v.length&&!G.done)})}
 $("#in").oninput=paint;
 $("#in").onkeydown=e=>{if(e.key==="Enter")submit()};$("#sub").onclick=submit;
-function submit(){if(!G||G.done)return;const v=$("#in").value.trim().toLowerCase();if(v)finish(v===G.word)}
-function finish(ok,msg){if(G.done)return;G.done=true;clearInterval(tick);$("#in").disabled=true;
+function submit(){if(!G||G.done)return;const v=$("#in").value.trim().toLowerCase();if(v)finish(v===G.word,undefined,v)}
+function finish(ok,msg,typed){if(G.done)return;G.done=true;const close=!ok&&!msg&&near(typed,G.word);if(!ok&&G.inf){G.lives--;$("#lvs").textContent="lives "+Math.max(0,G.lives)}clearInterval(tick);$("#in").disabled=true;
  const used=Date.now()-G.t0,s=ok?G.streak+1:0,pts=ok?100+(G.ms?Math.round(50*Math.max(0,1-used/G.ms)):0)+Math.min(s-1,5)*10:0;G.streak=s;G.bs=Math.max(G.bs||0,s);stats.bs=Math.max(stats.bs||0,s);sfx(ok);stats.a++;if(ok){stats.w++;stats.c+=G.word.length;stats.m+=used;G.chars+=G.word.length;G.tms+=used}
- G.pts+=pts;if(ok)G.ok++;$("#play").classList.remove("low");countTo($("#ps"),G.pts);pop(ok?"+"+pts:"miss",ok);burst(ok);stk(G.streak);
+ G.pts+=pts;if(ok)G.ok++;$("#play").classList.remove("low");countTo($("#ps"),G.pts);pop(ok?"+"+pts:(close?"close":"miss"),ok);burst(ok);stk(G.streak);
  $("#wd").querySelectorAll(".wl").forEach((e,k)=>{e.textContent=G.word[k];e.className="wl "+(ok?"ok":"bad")});
- $("#fb").style.color=ok?"var(--ok)":"var(--bad)";$("#fb").textContent=ok?"sweet! +"+pts+(G.streak>1?" · "+G.streak+" in a row":""):(msg||"Not quite")+". it was “"+G.word+"”";
+ $("#fb").style.color=ok?"var(--ok)":"var(--bad)";$("#fb").textContent=ok?"sweet! +"+pts+(G.streak>1?" · "+G.streak+" in a row":""):(msg||(close?"you were close!":"Not quite"))+". it was “"+G.word+"”";
  scores.me={name:P.name,pts:G.pts,bee:MY};renderLive();
  if(G.multi){R&&R.emit("ans",{i:G.i,name:P.name,pts:G.pts,bee:MY});markAns(G.i,"me")}
- else setTimeout(()=>G.i+1<G.words.length&&!(G.hc&&!ok)?round(G.i+1):endGame(),1500)}
+ else setTimeout(()=>{if(G.inf&&G.i+2>=G.words.length)G.words=G.words.concat(pick(P.diff,9999));const stop=(G.hc&&!ok)||(G.inf&&G.lives<=0);if(!stop&&G.i+1<G.words.length)round(G.i+1);else{if(G.inf)G.words=G.words.slice(0,G.i+1);endGame()}},1500)}
 function renderLive(){const el=$("#live");if(!G||!G.multi){el.innerHTML="";return}
  el.innerHTML=Object.values(scores).sort((a,b)=>b.pts-a.pts).map(s=>`<div><span style="display:flex;align-items:center;gap:8px">${beeSvg(s.bee,22)}${esc(s.name)}</span><b class="mono">${s.pts}</b></div>`).join("")}
-function endGame(){clearInterval(tick);clearTimeout(hostT);stats.g++;stats.b=Math.max(stats.b,G.pts);const wpm=G.tms>0?Math.round(G.chars/5/(G.tms/60000)):0;G.wpm=wpm;stats.bw=Math.max(stats.bw,wpm);stats.hist.push({t:Date.now(),p:G.pts,ok:G.ok,n:G.words.length,d:P.diff,w:wpm,m:G.multi?1:0});stats.hist=stats.hist.slice(-300);stats.h.push({p:G.pts,ok:G.ok,n:G.words.length,d:P.diff});stats.h=stats.h.sort((a,b)=>b.p-a.p).slice(0,5);saveStats();$("#sh").textContent="copy result";view("end");
+function endGame(){clearInterval(tick);clearTimeout(hostT);stats.g++;stats.b=Math.max(stats.b,G.pts);const wpm=G.tms>0?Math.round(G.chars/5/(G.tms/60000)):0;G.wpm=wpm;stats.bw=Math.max(stats.bw,wpm);stats.hist.push({t:Date.now(),p:G.pts,ok:G.ok,n:G.words.length,d:P.diff,w:wpm,m:G.multi?1:0});stats.hist=stats.hist.slice(-300);stats.h.push({p:G.pts,ok:G.ok,n:G.words.length,d:P.diff});stats.h=stats.h.sort((a,b)=>b.p-a.p).slice(0,5);saveStats();try{bumpTotals(1,G.ok)}catch(e){}$("#sh").textContent="copy result";view("end");
  const top=G.multi?Object.values(scores).sort((a,b)=>b.pts-a.pts)[0]:null;const acc=G.words.length?G.ok/G.words.length:0,rank=acc>=.95?"queen bee":acc>=.8?"worker bee":acc>=.5?"drone":"larva";
  $("#et").textContent=G.multi?(top?top.name+" wins":"round over"):rank;$("#esc").textContent="0";countTo($("#esc"),G.pts);
  $("#est").innerHTML=`<div><b class="mono">${Math.round(acc*100)}%</b><span>accuracy</span></div><div><b class="mono">${G.wpm||0}</b><span>wpm</span></div><div><b class="mono">${G.bs||0}</b><span>best streak</span></div>`;
  $("#rep").classList.toggle("hide",!!G.multi);if(acc>=.5)confetti();
+ if(G.inf){stats.ib=Math.max(stats.ib||0,G.ok);saveStats();$("#et").textContent="run over";$("#es").textContent=G.ok+" word"+(G.ok===1?"":"s")+" before you ran out of lives · "+G.pts+" points"}
  if(G.hc){const win=G.ok===G.words.length;stats.hcb=Math.max(stats.hcb||0,G.ok);if(win)stats.hcw=(stats.hcw||0)+1;else loseBee();saveStats();$("#et").textContent=win?"hardcore cleared":"your mybee is gone";$("#es").textContent=win?"flawless. "+G.ok+" of "+G.words.length+" and your bee lives.":"you made it "+G.ok+" word"+(G.ok===1?"":"s")+" deep. your mybee was reset to the default bee.";if(!win)$("#esc").textContent="0"}
  $("#es").textContent=G.ok+" of "+G.words.length+" correct · "+G.pts+" points"+(G.wpm?" · "+G.wpm+" wpm":"");
  $("#er").innerHTML=G.multi?Object.values(scores).sort((a,b)=>b.pts-a.pts).map((s,k)=>`<div><span>${k+1+"."} ${beeSvg(s.bee,22)} ${esc(s.name)}</span><b class="mono">${s.pts}</b></div>`).join(""):""}
-$("#rep").onclick=()=>{if(G.hc){view("home");return}begin(pick(P.diff,P.n),G.ms,false)};
+$("#rep").onclick=()=>{if(G.inf){begin(pick(P.diff,9999),20000,false,false,true);return}if(G.hc){view("home");return}begin(pick(P.diff,P.n),G.ms,false)};
 $("#again").onclick=()=>{R?(view("lobby"),lobby()):view("home")};
 function renderLb(){$("#lb").innerHTML=stats.h.length?stats.h.map((h,k)=>`<div><span>${k+1}. ${h.d} · ${h.ok}/${h.n} correct</span><b class="mono">${h.p}</b></div>`).join(""):"<div><span>no games yet. your first score lands here.</span></div>"}
 let mute=false,AC=null;
