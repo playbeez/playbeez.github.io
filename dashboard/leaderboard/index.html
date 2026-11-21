@@ -101,8 +101,8 @@ function render(){const me=window.MYID;note();
 $$("#lmet .chip").forEach(b=>b.onclick=()=>{$$("#lmet .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");met=b.dataset.m;render()});
 $$("#lper .chip").forEach(b=>b.onclick=()=>{$$("#lper .chip").forEach(x=>x.classList.remove("on"));b.classList.add("on");per=b.dataset.p;render()});
 whenAuth.then(async({f,u})=>{
- if(!u){$("#llist").innerHTML='<div><span>sign in to see the leaderboard.</span><button class="chip" id="lsi">sign in</button></div>';$("#lsi").onclick=()=>$("#adlg").showModal();note();return}
- window.MYID=u.uid;await loadBadgeData(f);
+ if(!f){$("#llist").innerHTML="<div><span>couldn’t load.</span></div>";return}
+ window.MYID=u?u.uid:null;await loadBadgeData(f);
  const D=f.D,R=p=>D.ref(f.db,p),conv=s=>{const o=[];s.forEach(c=>{const v=c.val()||{};o.push({id:c.key,name:v.name||"",w:+v.w||0,g:+v.g||0,bw:+v.bw||0,b:+v.b||0,hc:+v.hc||0,ib:+v.ib||0,bee:v.bee})});return o},bad=()=>{$("#llist").innerHTML="<div><span>couldn’t load. check your database rules.</span></div>"};
  const now=Date.now();
  D.onValue(R("players"),s=>{rows.all=conv(s);render()},bad);
