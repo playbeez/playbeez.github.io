@@ -124,15 +124,16 @@ const whenAuth=fb.then(async f=>{
    if(v&&v.s&&(v.s.g||0)>(loc.g||0)){const m=Object.assign({},loc,v.s);m.hist=v.hist||[];m.h=m.hist.map(x=>({p:x.p,ok:x.ok,n:x.n,d:x.d})).sort((a,b)=>b.p-a.p).slice(0,5);localStorage.setItem("beez",JSON.stringify(m))}}catch(e){}
   window.saveBeeRemote=()=>{f.D.set(f.D.ref(f.db,"users/"+u.uid+"/bee"),MY).catch(()=>{})};
   try{const bv=(await f.D.get(f.D.ref(f.db,"users/"+u.uid+"/bee"))).val();if(bv){MY=normBee(bv);try{localStorage.setItem("beez_my",JSON.stringify(MY))}catch(x){}}else saveBeeRemote()}catch(e){}
+  try{const bk=f.D.ref(f.db,"users/"+u.uid+"/born");if(!(await f.D.get(bk)).val()){await f.D.runTransaction(f.D.ref(f.db,"totals/u"),v=>(v||0)+1);await f.D.set(bk,true)}}catch(e){}
   ready=true;
   let go=false;try{go=sessionStorage.getItem("beez_dash");sessionStorage.removeItem("beez_dash")}catch(x){}if(go)location.href=ROOT+"dashboard/"}
  return{f,u}});
 if(document.querySelector("#sg")){let loc={};try{loc=JSON.parse(localStorage.getItem("beez")||"{}")}catch(e){}
  const show=(g,w)=>{$("#sg").textContent=g.toLocaleString();$("#sw").textContent=w.toLocaleString()};show(loc.g||0,loc.w||0);
  (async()=>{try{const db=await claude.use("db");if(!db)return;db.collection("players").onSnapshot(s=>{let g=0,w=0;s.docs.forEach(d=>{const v=d.data()||{};g+=+v.g||0;w+=+v.w||0});show(g,w)},()=>{})}catch(e){}})()}
-(async()=>{const f=await fb;if(!f||f.auth.currentUser)return;
+(async()=>{const f=await fb;if(!f)return;if(f.auth.currentUser&&document.querySelector("#su"))f.D.onValue(f.D.ref(f.db,"totals/u"),x=>{$("#su").textContent=(+x.val()||0).toLocaleString()},()=>{});if(f.auth.currentUser)return;
  if(document.querySelector("#sg")){let loc={};const show=(g,w)=>{$("#sg").textContent=(+g||0).toLocaleString();$("#sw").textContent=(+w||0).toLocaleString()};
-  f.D.onValue(f.D.ref(f.db,"totals"),s=>{const v=s.val()||{};show(v.g,v.w)},()=>{})}
+  f.D.onValue(f.D.ref(f.db,"totals"),s=>{const v=s.val()||{};show(v.g,v.w);if(document.querySelector("#su"))$("#su").textContent=(+v.u||0).toLocaleString()},()=>{})}
  if(document.querySelector("#sp"))f.D.onValue(f.D.ref(f.db,"rooms/lobby/peers"),s=>{$("#sp").textContent=Math.max(1,s.size)},()=>{})})();
 window.bumpTotals=async(g,w)=>{try{const f=await fb;if(!f||!f.auth.currentUser)return;const D=f.D;if(g)await D.runTransaction(D.ref(f.db,"totals/g"),v=>(v||0)+g);if(w)await D.runTransaction(D.ref(f.db,"totals/w"),v=>(v||0)+w)}catch(e){}};
 document.querySelectorAll(".pill").forEach(p=>{if(/free spelling bee/i.test(p.textContent))p.remove()});
