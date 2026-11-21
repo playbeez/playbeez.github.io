@@ -244,21 +244,26 @@ function showVerify(f,u){if(document.getElementById("vbar"))return;const el=docu
  el.append(t,a,b);const hd=document.querySelector("header");if(hd)hd.parentNode.insertBefore(el,hd.nextSibling)}
 
 (function(){const nav=document.querySelector(".nav");if(!nav||typeof whenAuth==="undefined")return;
-const PG_=[["play","play/"],["hardcore mode","play/?hardcore=1"],["leaderboard","dashboard/leaderboard/"],["dashboard","dashboard/"],["settings","settings/"],["privacy","privacy/"],["terms","terms/"]];
+const PG_=[["play","play/"],["hardcore mode","play/?hardcore=1"],["leaderboard","dashboard/leaderboard/"],["posts","posts/"],["community","community/"],["messages","messages/"],["dashboard","dashboard/"],["settings","settings/"],["privacy","privacy/"],["terms","terms/"]];
 document.head.appendChild(Object.assign(document.createElement("style"),{textContent:".sbar{position:relative;flex:1;min-width:0;max-width:340px;margin:0 12px;text-transform:lowercase}.sbar input{width:100%;font:inherit;font-size:14px;padding:8px 12px 8px 34px;border-radius:12px;border:1px solid var(--line,#2f2b20);background:var(--card,#1a1812) url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239b9585' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E\") no-repeat 11px 50%;color:inherit;outline:0}.sbar input:focus{border-color:var(--y,#FDB800)}#sres{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--bg2,#16140f);border:1px solid var(--line,#2f2b20);border-radius:14px;max-height:60vh;overflow:auto;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.4);min-width:240px}#sres.on{display:block}#sres a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line,#2f2b20);color:inherit;text-decoration:none;font-weight:700;font-size:14px}#sres a:hover{background:rgba(253,184,0,.12)}#sres small{margin-left:auto;color:var(--mute,#9b9585);font-weight:500}#sres .sh{font-size:11px;letter-spacing:.1em;color:var(--mute,#9b9585);padding:10px 12px 4px;font-weight:800}@media(max-width:620px){.sbar{margin:0 6px}}"}));
 const w=document.createElement("div");w.className="sbar";w.innerHTML='<input id="sq" type="search" placeholder="search users, pages, games" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="search"><div id="sres"></div>';
 nav.parentNode.insertBefore(w,nav);
 const inp=w.querySelector("#sq"),el=w.querySelector("#sres");
 let P_=null,ME_=null,loading=false;
-const load=()=>{if(P_||loading)return;loading=true;whenAuth.then(async({f,u})=>{ME_=u;if(!u){P_={};render();return}await loadBadgeData(f);try{P_=(await f.D.get(f.D.ref(f.db,"players"))).val()||{}}catch(e){P_={}}render()})};
+const load=()=>{if(P_||loading)return;loading=true;whenAuth.then(async({f,u})=>{ME_=u;if(!f){P_={};render();return}await loadBadgeData(f);try{P_=(await f.D.get(f.D.ref(f.db,"players"))).val()||{}}catch(e){P_={}}render()})};
 function render(){const raw=inp.value.trim(),q=raw.toLowerCase();let h="";
  const pg=PG_.filter(p=>!q||p[0].includes(q));
  if(q.length){let us=[];if(P_)us=Object.keys(P_).filter(k=>(P_[k].name||"").toLowerCase().includes(q)||k===raw).sort((a,c)=>{const x=(P_[a].name||"").toLowerCase().startsWith(q)?0:1,y=(P_[c].name||"").toLowerCase().startsWith(q)?0:1;return x-y||((FC[c]||0)-(FC[a]||0))}).slice(0,12);
   if(us.length)h+='<div class="sh">users</div>'+us.map(k=>`<a href="${ROOT}user/?id=${k}">${beeSvg(P_[k].bee,26)}${esc(P_[k].name||"bee")}${verMark(k,14)}<small>${(FC[k]||0).toLocaleString()} followers</small></a>`).join("");
-  else if(P_===null)h+='<div class="sh">searching users...</div>';else if(!ME_)h+='<div class="sh">sign in to search users</div>';else h+='<div class="sh">no users found</div>'}
+  else if(P_===null)h+='<div class="sh">searching users...</div>';else h+='<div class="sh">no users found</div>'}
  if(pg.length)h+='<div class="sh">pages and games</div>'+pg.map(p=>`<a href="${ROOT}${p[1]}">${esc(p[0])}</a>`).join("");
  el.innerHTML=h;el.classList.toggle("on",!!h)}
 inp.onfocus=()=>{load();render()};inp.oninput=()=>{load();render()};
 inp.onkeydown=e=>{if(e.key==="Escape"){el.classList.remove("on");inp.blur()}if(e.key==="Enter"){const a=el.querySelector("a");if(a)location.href=a.href}};
 document.addEventListener("click",e=>{if(!w.contains(e.target))el.classList.remove("on")});
 document.addEventListener("keydown",e=>{if(e.key==="/"&&!/input|textarea|select/i.test((document.activeElement||{}).tagName||"")){e.preventDefault();inp.focus()}})})();
+(function(){const nav=document.querySelector(".nav");if(!nav||nav.querySelector("#lkposts"))return;
+ document.head.appendChild(Object.assign(document.createElement("style"),{textContent:".nav{flex-wrap:wrap;justify-content:flex-end}"}));
+ const acct=nav.querySelector("#acct"),mk=(id,t,h)=>{const a=document.createElement("a");a.id=id;a.href=ROOT+h;a.textContent=t;nav.insertBefore(a,acct||null);return a};
+ mk("lkposts","posts","posts/");mk("lkcomm","community","community/");const m=mk("lkmsg","messages","messages/");
+ whenAuth.then(({f,u})=>{if(!u||!f)return;f.D.onValue(f.D.ref(f.db,"inbox/"+u.uid),s=>{let n=0;s.forEach(c=>{const v=c.val()||{};if(v.seen===false)n++});m.textContent=n?"messages ("+n+")":"messages"},()=>{})})})();
