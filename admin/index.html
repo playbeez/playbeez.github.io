@@ -111,7 +111,8 @@ whenAuth.then(async({f,u})=>{
  <h3 class="dh">appeals</h3><div id="alist"></div>
  <h3 class="dh">players</h3><input class="f" id="psearch" placeholder="search by name" style="margin-bottom:12px"><div id="plist"></div>`);
  let players={},badges={},admins={},owner=null,bans={},appeals={};
- const stats=()=>{const a=Object.values(players);const sum=k=>a.reduce((t,v)=>t+(+v[k]||0),0);$("#ost").innerHTML=[["players",a.length],["games played",sum("g")],["words spelled",sum("w")],["top wpm",Math.max(0,...a.map(v=>+v.bw||0))]].map(c=>`<div class="st"><span class="n mono">${c[0]}</span><div class="dv mono">${c[1].toLocaleString()}</div></div>`).join("")};
+ let tsync=false;
+ const stats=()=>{const a=Object.values(players);const sum=k=>a.reduce((t,v)=>t+(+v[k]||0),0);if(!tsync&&a.length){tsync=true;D.set(R("totals"),{g:sum("g"),w:sum("w")}).catch(()=>{})}$("#ost").innerHTML=[["players",a.length],["games played",sum("g")],["words spelled",sum("w")],["top wpm",Math.max(0,...a.map(v=>+v.bw||0))]].map(c=>`<div class="st"><span class="n mono">${c[0]}</span><div class="dv mono">${c[1].toLocaleString()}</div></div>`).join("")};
  const list=()=>{const q=$("#psearch").value.trim().toLowerCase();const rows=Object.entries(players).filter(([id,v])=>!q||(v.name||"").toLowerCase().includes(q)||id.toLowerCase().includes(q)).sort((a,b)=>(+b[1].w||0)-(+a[1].w||0)).slice(0,60);
   $("#plist").innerHTML=rows.map(([id,v])=>`<div class="prow"><div><div style="display:flex;align-items:center;gap:8px">${beeSvg(v.bee,28)}<b>${esc(v.name||"bee")}</b></div><div class="meta mono">${id}</div>${bans[id]?`<div class="meta" style="color:var(--bad)">${bans[id].type==="terminated"?"terminated":"banned"}${bans[id].until?" until "+new Date(bans[id].until).toLocaleString():""}${bans[id].reason?": "+esc(bans[id].reason):""}</div>`:""}<div class="meta">${v.g||0} games · ${v.w||0} words · ${v.bw||0} wpm</div></div>
   
